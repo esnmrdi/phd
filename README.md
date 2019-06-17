@@ -1,2 +1,2 @@
 # phd-thesis
-Collection of the data and python codes corresponding to my PhD studies at McGill
+My PhD research on development of instantaneous vehicular energy and emission estimation models
