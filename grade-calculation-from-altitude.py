@@ -279,14 +279,7 @@ def plot_raw_altitude(df, vehicle, trip):
             ("Altitude (m)", "@ALT_M"),
         ]
     )
-    TOOLS = [
-        hover,
-        PanTool(),
-        ResetTool(),
-        SaveTool(),
-        UndoTool(),
-        WheelZoomTool(),
-    ]
+    TOOLS = [hover, PanTool(), ResetTool(), SaveTool(), UndoTool(), WheelZoomTool()]
     p = figure(
         width=790,
         height=395,
@@ -323,14 +316,7 @@ def plot_savitzky_golay_output(df, vehicle, trip):
             ("SG. Altitude (m)", "@SG_ALT_M"),
         ]
     )
-    TOOLS = [
-        hover,
-        PanTool(),
-        ResetTool(),
-        SaveTool(),
-        UndoTool(),
-        WheelZoomTool(),
-    ]
+    TOOLS = [hover, PanTool(), ResetTool(), SaveTool(), UndoTool(), WheelZoomTool()]
     p = figure(
         width=790,
         height=395,
@@ -377,14 +363,7 @@ def plot_grade_estimates(df, vehicle, trip):
             ("No-Outlier Grade", "@NO_OUTLIER_GRADE_DEG"),
         ]
     )
-    TOOLS = [
-        hover,
-        PanTool(),
-        ResetTool(),
-        SaveTool(),
-        UndoTool(),
-        WheelZoomTool(),
-    ]
+    TOOLS = [hover, PanTool(), ResetTool(), SaveTool(), UndoTool(), WheelZoomTool()]
     p = figure(
         width=790,
         height=395,
