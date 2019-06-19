@@ -4,10 +4,17 @@
 
 #%% [markdown]
 # ### Load required libraries
+import json
 import numpy as np
 import pandas as pd
-from pomegranate import HiddenMarkovModel
-from sklearn import preprocessing
+import random
+from pomegranate import (
+    HiddenMarkovModel,
+    MultivariateGaussianDistribution,
+    GaussianKernelDensity,
+)
+from sklearn import preprocessing, metrics
+import matplotlib.pyplot as plt
 from bokeh.io import output_notebook
 from bokeh.plotting import figure, show
 from bokeh.models import (
@@ -158,6 +165,7 @@ EXPERIMENTS = {
         "05-30-2019 18.55.28",
     ],
 }
+EMISSIONS = ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG"]
 
 #%% [markdown]
 # ### Loading data from Excel to a pandas dataframe
@@ -174,46 +182,68 @@ def load_from_Excel(vehicle, trip):
 def scale(df, feature_names):
     scaler = preprocessing.StandardScaler().fit(df[feature_names])
     df[feature_names] = scaler.transform(df[feature_names])
-    return df
+    return df, scaler
+
 
 #%% [markdown]
 # ### Discretize features by rounding to specific scales
 def discretize(df, feature_name, scale):
-    print(df[feature_name])
     df[feature_name] *= scale
     df[feature_name] = df[feature_name].round()
     df[feature_name] /= scale
-    print(df[feature_name])
     return df
+
+
+#%% [markdown]
+# ### Set and fit the Hidden Markov Model on data
+def hmm(df, emissions, n_states, algorithm):
+    model = HiddenMarkovModel.from_samples(
+        distribution=MultivariateGaussianDistribution,
+        n_components=n_states,
+        X=df[emissions].to_numpy(),
+        algorithm=algorithm,
+        verbose=True,
+    )
+    return model
+
+
+#%% [markdown]
+# ### Plot feature in times-series format
+def plot_feature(df, feature_name, vehicle, trip):
+    source = ColumnDataSource(df)
+    datetime = EXPERIMENTS[vehicle][trip]
+    TOOLS = [PanTool(), ResetTool(), SaveTool(), UndoTool(), WheelZoomTool()]
+    p = figure(
+        width=790,
+        height=395,
+        title=vehicle[4:] + " on " + datetime[:10] + " @ " + datetime[11:],
+        toolbar_location="above",
+        tools=TOOLS,
+        x_axis_type="datetime",
+    )
+    p.line(x="DATETIME", y=feature_name, line_color="blue", line_width=2, source=source)
+    show(p)
+    return None
 
 
 #%% [markdown]
 # ### Plot histogram and normality check
 def plot_histogram(df, feature_name):
-    hist, edges = np.histogram(df[feature_name], density=True, bins=50)
-    TOOLS = [PanTool(), ResetTool(), SaveTool(), UndoTool(), WheelZoomTool()]
-    p = figure(width=790, height=395, toolbar_location="above", tools=TOOLS)
-    p.quad(
-        top=hist,
-        bottom=0,
-        left=edges[:-1],
-        right=edges[1:],
-        fill_color="navy",
-        line_color="white",
-        alpha=0.5,
-        legend="Frequency",
+    d = GaussianKernelDensity(df[feature_name], bandwidth=2)
+    d.plot(
+        facecolor="c",
+        edgecolor="w",
+        bins=50,
+        alpha=0.3,
+        label="Gaussian Kernel Density",
     )
-    p.y_range.start = 0
-    p.legend.location = "top_right"
-    show(p)
+
 
 #%% [markdown]
 # ### Saving the calculated field back in Excel file
 def save_back_to_Excel(df, vehicle, trip):
-    df = df[1:]
-    df = df.dropna()
     directory = "./Field Experiments/Veepeak/" + vehicle + "/Processed/"
-    output_file = vehicle + " + HMS.xlsx"
+    output_file = vehicle + " Grade + HMS.xlsx"
     output_path = directory + output_file
     write_mode = "w" if trip == 0 else "a"
     with pd.ExcelWriter(output_path, engine="openpyxl", mode=write_mode) as writer:
@@ -230,13 +260,18 @@ def save_back_to_Excel(df, vehicle, trip):
 
 #%% [markdown]
 # ### Batch execution on all vehicles and their trips
-EMISSIONS = ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG"]
-STATE = "FCR_LH"
-VEHICLE = "019 Hyundai Elantra GT 2019 (2.0L Auto)"
-TRIP = 0
-df = load_from_Excel(VEHICLE, TRIP)
-df = scale(df, feature_names=EMISSIONS)
-df = discretize(df, feature_name=STATE, scale=4)
-
-
-#%%
+pd.options.mode.chained_assignment = "raise"
+for vehicle, trips in EXPERIMENTS.items():
+    for trip, label in enumerate(trips):
+        # Load data corresponding to vehicle and trip into a dataframe
+        df = load_from_Excel(vehicle, trip)
+        # Apply feature scaling on the emissions
+        df_scaled, scaler = scale(df, feature_names=EMISSIONS)
+        # Train the Hidden Markov Model
+        model = hmm(df_scaled, emissions=EMISSIONS, n_states=10, algorithm="baum-welch")
+        # Convert emissions from Pandas format into numpy array
+        emissions = df[EMISSIONS].to_numpy()
+        # Predict hidden states for the x
+        df["HMM_STATE"] = model.predict(emissions)
+        # Save dataframe to a new Excel file
+        save_back_to_Excel(df, vehicle, trip)
