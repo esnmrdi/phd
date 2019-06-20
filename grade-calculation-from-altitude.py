@@ -156,6 +156,9 @@ EXPERIMENTS = {
         "05-30-2019 18.21.43",
         "05-30-2019 18.55.28",
     ],
+    "029 Ford Escape 2006 (3.0L Auto)": [
+        "06-19-2019 09.28.00"
+    ]
 }
 
 #%% [markdown]
@@ -358,7 +361,6 @@ def plot_grade_estimates(df, vehicle, trip):
         tooltips=[
             ("index", "$index"),
             ("Distance (km)", "@DIST_KM"),
-            ("Pitch", "@PITCH_DEG"),
             ("Calc. Grade", "@CALC_GRADE_DEG"),
             ("No-Outlier Grade", "@NO_OUTLIER_GRADE_DEG"),
         ]
@@ -370,15 +372,6 @@ def plot_grade_estimates(df, vehicle, trip):
         title=vehicle[4:] + " on " + datetime[:10] + " @ " + datetime[11:],
         toolbar_location="above",
         tools=TOOLS,
-    )
-    p.line(
-        x="DIST_KM",
-        y="PITCH_DEG",
-        line_color="blue",
-        line_width=2,
-        legend="Pitch",
-        muted_alpha=0.1,
-        source=source,
     )
     p.line(
         x="DIST_KM",
