@@ -160,6 +160,9 @@ EXPERIMENTS = {
         "05-30-2019 18.21.43",
         "05-30-2019 18.55.28",
     ],
+    "029 Ford Escape 2006 (3.0L Auto)": [
+        "06-19-2019 09.28.00"
+    ]
 }
 VEHICLE = "009 Renault Logan 2014 (1.6L Manual)"
 TRIP = 2
