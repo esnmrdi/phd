@@ -164,6 +164,9 @@ EXPERIMENTS = {
         "05-30-2019 18.21.43",
         "05-30-2019 18.55.28",
     ],
+    "029 Ford Escape 2006 (3.0L Auto)": [
+        "06-19-2019 09.28.00"
+    ]
 }
 EMISSIONS = ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG"]
 
