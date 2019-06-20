@@ -1,6 +1,6 @@
 #%% [markdown]
 # ## Ramer-Douglas-Peucker Algorithm
-# Ehsan Moradi, Ph.D. Candidate
+# ### Ehsan Moradi, Ph.D. Candidate
 
 #%% [markdown]
 # ### Load required libraries
