@@ -246,7 +246,7 @@ def plot_histogram(df, feature_name):
 # ### Saving the calculated field back in Excel file
 def save_back_to_Excel(df, vehicle, trip):
     directory = "./Field Experiments/Veepeak/" + vehicle + "/Processed/"
-    output_file = vehicle + " Grade + HMS.xlsx"
+    output_file = vehicle + " + Grade + HMS.xlsx"
     output_path = directory + output_file
     write_mode = "w" if trip == 0 else "a"
     with pd.ExcelWriter(output_path, engine="openpyxl", mode=write_mode) as writer:
