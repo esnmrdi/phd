@@ -24,6 +24,24 @@ from bokeh.models import (
 output_notebook()
 
 #%% [markdown]
+# ### Method to pass coordinates via an HTTP request and retrieve elevations
+def get_elevations(path):
+    request = urllib.request.urlopen(
+        ELEVATION_BASE_URL + "?locations=" + path + "&key=" + API_KEY
+    )
+    try:
+        results = json.load(request).get("results")
+        print(results)
+        if len(results) > 0:
+            elevations = [result.get("elevation") for result in results]
+            return elevations
+        else:
+            print("HTTP GET Request failed.")
+    except ValueError:
+        print("JSON decode failed: {}".format(str(request)))
+
+
+#%% [markdown]
 # ### General Settings
 ELEVATION_BASE_URL = "https://maps.googleapis.com/maps/api/elevation/json"
 API_KEY = "AIzaSyCmRuGS_wJfQf8vZ-CvGG2_MYNCbHBohiE"
@@ -160,29 +178,10 @@ EXPERIMENTS = {
         "05-30-2019 18.21.43",
         "05-30-2019 18.55.28",
     ],
-    "029 Ford Escape 2006 (3.0L Auto)": [
-        "06-19-2019 09.28.00"
-    ]
+    "029 Ford Escape 2006 (3.0L Auto)": ["06-19-2019 09.28.00"],
 }
 VEHICLE = "009 Renault Logan 2014 (1.6L Manual)"
 TRIP = 2
-
-#%% [markdown]
-# ### Method to pass coordinates via an HTTP request and retrieve elevations
-def get_elevations(path):
-    request = urllib.request.urlopen(
-        ELEVATION_BASE_URL + "?locations=" + path + "&key=" + API_KEY
-    )
-    try:
-        results = json.load(request).get("results")
-        print(results)
-        if len(results) > 0:
-            elevations = [result.get("elevation") for result in results]
-            return elevations
-        else:
-            print("HTTP GET Request failed.")
-    except ValueError:
-        print("JSON decode failed: {}".format(str(request)))
 
 
 #%% [markdown]
