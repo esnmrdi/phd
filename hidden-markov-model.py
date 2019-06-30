@@ -29,6 +29,98 @@ from bokeh.models import (
 
 output_notebook()
 
+
+#%% [markdown]
+# ### Loading data from Excel to a pandas dataframe
+def load_from_Excel(vehicle, trip):
+    directory = "./Field Experiments/Veepeak/" + vehicle + "/Processed/"
+    input_file = vehicle + " + Grade.xlsx"
+    input_path = directory + input_file
+    df = pd.read_excel(input_path, sheet_name=EXPERIMENTS[vehicle][trip], header=0)
+    return df
+
+
+#%% [markdown]
+# ### Feature scaling
+def scale(df, feature_names):
+    scaler = preprocessing.StandardScaler().fit(df[feature_names])
+    df[feature_names] = scaler.transform(df[feature_names])
+    return df, scaler
+
+
+#%% [markdown]
+# ### Discretize features by rounding to specific scales
+def discretize(df, feature_name, scale):
+    df[feature_name] *= scale
+    df[feature_name] = df[feature_name].round()
+    df[feature_name] /= scale
+    return df
+
+
+#%% [markdown]
+# ### Set and fit the Hidden Markov Model on data
+def hmm(df, emissions, n_states, algorithm):
+    model = HiddenMarkovModel.from_samples(
+        distribution=MultivariateGaussianDistribution,
+        n_components=n_states,
+        X=df[emissions].to_numpy(),
+        algorithm=algorithm,
+        verbose=True,
+    )
+    return model
+
+
+#%% [markdown]
+# ### Plot feature in times-series format
+def plot_feature(df, feature_name, vehicle, trip):
+    source = ColumnDataSource(df)
+    datetime = EXPERIMENTS[vehicle][trip]
+    TOOLS = [PanTool(), ResetTool(), SaveTool(), UndoTool(), WheelZoomTool()]
+    p = figure(
+        width=790,
+        height=395,
+        title=vehicle[4:] + " on " + datetime[:10] + " @ " + datetime[11:],
+        toolbar_location="above",
+        tools=TOOLS,
+        x_axis_type="datetime",
+    )
+    p.line(x="DATETIME", y=feature_name, line_color="blue", line_width=2, source=source)
+    show(p)
+    return None
+
+
+#%% [markdown]
+# ### Plot histogram and normality check
+def plot_histogram(df, feature_name):
+    d = GaussianKernelDensity(df[feature_name], bandwidth=2)
+    d.plot(
+        facecolor="c",
+        edgecolor="w",
+        bins=50,
+        alpha=0.3,
+        label="Gaussian Kernel Density",
+    )
+
+
+#%% [markdown]
+# ### Saving the calculated field back in Excel file
+def save_back_to_Excel(df, vehicle, trip):
+    directory = "./Field Experiments/Veepeak/" + vehicle + "/Processed/"
+    output_file = vehicle + " + Grade + HMS.xlsx"
+    output_path = directory + output_file
+    write_mode = "w" if trip == 0 else "a"
+    with pd.ExcelWriter(output_path, engine="openpyxl", mode=write_mode) as writer:
+        df.to_excel(
+            writer, sheet_name=EXPERIMENTS[vehicle][trip], header=True, index=None
+        )
+    print(
+        "{0} {1} saved to Excel successfully!".format(
+            vehicle, EXPERIMENTS[vehicle][trip]
+        )
+    )
+    return None
+
+
 #%% [markdown]
 # ### General Settings
 EXPERIMENTS = {
@@ -164,102 +256,9 @@ EXPERIMENTS = {
         "05-30-2019 18.21.43",
         "05-30-2019 18.55.28",
     ],
-    "029 Ford Escape 2006 (3.0L Auto)": [
-        "06-19-2019 09.28.00"
-    ]
+    "029 Ford Escape 2006 (3.0L Auto)": ["06-19-2019 09.28.00"],
 }
 EMISSIONS = ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG"]
-
-#%% [markdown]
-# ### Loading data from Excel to a pandas dataframe
-def load_from_Excel(vehicle, trip):
-    directory = "./Field Experiments/Veepeak/" + vehicle + "/Processed/"
-    input_file = vehicle + " + Grade.xlsx"
-    input_path = directory + input_file
-    df = pd.read_excel(input_path, sheet_name=EXPERIMENTS[vehicle][trip], header=0)
-    return df
-
-
-#%% [markdown]
-# ### Feature scaling
-def scale(df, feature_names):
-    scaler = preprocessing.StandardScaler().fit(df[feature_names])
-    df[feature_names] = scaler.transform(df[feature_names])
-    return df, scaler
-
-
-#%% [markdown]
-# ### Discretize features by rounding to specific scales
-def discretize(df, feature_name, scale):
-    df[feature_name] *= scale
-    df[feature_name] = df[feature_name].round()
-    df[feature_name] /= scale
-    return df
-
-
-#%% [markdown]
-# ### Set and fit the Hidden Markov Model on data
-def hmm(df, emissions, n_states, algorithm):
-    model = HiddenMarkovModel.from_samples(
-        distribution=MultivariateGaussianDistribution,
-        n_components=n_states,
-        X=df[emissions].to_numpy(),
-        algorithm=algorithm,
-        verbose=True,
-    )
-    return model
-
-
-#%% [markdown]
-# ### Plot feature in times-series format
-def plot_feature(df, feature_name, vehicle, trip):
-    source = ColumnDataSource(df)
-    datetime = EXPERIMENTS[vehicle][trip]
-    TOOLS = [PanTool(), ResetTool(), SaveTool(), UndoTool(), WheelZoomTool()]
-    p = figure(
-        width=790,
-        height=395,
-        title=vehicle[4:] + " on " + datetime[:10] + " @ " + datetime[11:],
-        toolbar_location="above",
-        tools=TOOLS,
-        x_axis_type="datetime",
-    )
-    p.line(x="DATETIME", y=feature_name, line_color="blue", line_width=2, source=source)
-    show(p)
-    return None
-
-
-#%% [markdown]
-# ### Plot histogram and normality check
-def plot_histogram(df, feature_name):
-    d = GaussianKernelDensity(df[feature_name], bandwidth=2)
-    d.plot(
-        facecolor="c",
-        edgecolor="w",
-        bins=50,
-        alpha=0.3,
-        label="Gaussian Kernel Density",
-    )
-
-
-#%% [markdown]
-# ### Saving the calculated field back in Excel file
-def save_back_to_Excel(df, vehicle, trip):
-    directory = "./Field Experiments/Veepeak/" + vehicle + "/Processed/"
-    output_file = vehicle + " + Grade + HMS.xlsx"
-    output_path = directory + output_file
-    write_mode = "w" if trip == 0 else "a"
-    with pd.ExcelWriter(output_path, engine="openpyxl", mode=write_mode) as writer:
-        df.to_excel(
-            writer, sheet_name=EXPERIMENTS[vehicle][trip], header=True, index=None
-        )
-    print(
-        "{0} {1} saved to Excel successfully!".format(
-            vehicle, EXPERIMENTS[vehicle][trip]
-        )
-    )
-    return None
-
 
 #%% [markdown]
 # ### Batch execution on all vehicles and their trips
