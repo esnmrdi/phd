@@ -43,6 +43,7 @@ def get_elevations(path):
 
 #%% [markdown]
 # ### General Settings
+pd.options.mode.chained_assignment = None
 ELEVATION_BASE_URL = "https://maps.googleapis.com/maps/api/elevation/json"
 API_KEY = "AIzaSyCmRuGS_wJfQf8vZ-CvGG2_MYNCbHBohiE"
 EXPERIMENTS = {

@@ -123,6 +123,7 @@ def save_back_to_Excel(df, vehicle, trip):
 
 #%% [markdown]
 # ### General Settings
+pd.options.mode.chained_assignment = None
 EXPERIMENTS = {
     "009 Renault Logan 2014 (1.6L Manual)": [
         "12-08-2018 16.05.22",
@@ -262,7 +263,6 @@ EMISSIONS = ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG"]
 
 #%% [markdown]
 # ### Batch execution on all vehicles and their trips
-pd.options.mode.chained_assignment = "raise"
 for vehicle, trips in EXPERIMENTS.items():
     for trip, label in enumerate(trips):
         # Load data corresponding to vehicle and trip into a dataframe
