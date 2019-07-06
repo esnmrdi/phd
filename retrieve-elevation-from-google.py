@@ -180,6 +180,8 @@ EXPERIMENTS = {
         "05-30-2019 18.55.28",
     ],
     "029 Ford Escape 2006 (3.0L Auto)": ["06-19-2019 09.28.00"],
+    "030 Honda Civic 2014 (1.8L Auto)": ["06-27-2019 20.33.03"],
+    "031 Ford Focus 2012 (2.0L Auto)": ["07-02-2019 15.49.55", "07-02-2019 20.26.36"],
 }
 VEHICLE = "009 Renault Logan 2014 (1.6L Manual)"
 TRIP = 2
