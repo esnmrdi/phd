@@ -261,7 +261,7 @@ def plot_grade_estimates(df, vehicle, trip):
 
 #%% [markdown]
 # ### General Settings
-pd.options.mode.chained_assignment = "raise"
+pd.options.mode.chained_assignment = None
 EXPERIMENTS = {
     "009 Renault Logan 2014 (1.6L Manual)": [
         "12-08-2018 16.05.22",
@@ -407,7 +407,6 @@ EXPERIMENTS = {
 
 #%% [markdown]
 # ### Batch execution on all vehicles and their trips
-pd.options.mode.chained_assignment = None
 for vehicle, trips in EXPERIMENTS.items():
     for trip, label in enumerate(trips):
         # Load data corresponding to vehicle and trip into a dataframe
