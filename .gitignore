@@ -2,6 +2,7 @@
 playground.py
 .vscode/
 PhD\ Notes.gdoc
+ANN/
 Annual\ Progress\ Reports/
 Charts,\ Tables,\ Forms,\ Flowcharts/
 EMME/
@@ -10,8 +11,8 @@ Literature/
 MOVES/
 Presentations/
 Proposal/
-Support\ Vector\ Regression/
 Surveys/
+SVR/
 Weekly\ Research\ Reports/
 Old\ Python\ Codes/
 3DATX/
