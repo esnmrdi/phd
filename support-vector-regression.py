@@ -1,158 +1,334 @@
 #%% [markdown]
-# ## Suppoer Vector Regression
-# Ehsan Moradi, Ph.D. Candidate
+# ## Support Vector Regression for FCR Prediction
+# ### Ehsan Moradi, Ph.D. Candidate
 
 #%% [markdown]
 # ### Load required libraries
 import numpy as np
 import pandas as pd
-from sklearn.svm import SVR
-from sklearn.model_selection import GridSearchCV
-from sklearn import preprocessing
 import matplotlib.pyplot as plt
-import matplotlib.tri as tri
-import matplotlib.gridspec as gridspec
-import itertools
-
-plt.rcParams["axes.grid"] = True
-
-#%% [markdown]
-# ### General settings
-vehicle = "013 Geely Emgrand7 2014 (1.8L Auto)"
-dependent = "fcr_gs"
-main_features = model_features = ["spd_si", "acc_si", "corr_grade"]
-lagged_features = {"spd_si": 0, "acc_si": 0, "corr_grade": 0}
-split_ratio = {
-    "train": 0.7,
-    "dev": 0.15,
-    "test": 0.15,
-}  # for training, dev, and test sets
-seed = 20
-labels = {
-    "fcr_gs": "Fuel Consumption Rate (g/s)",
-    "spd_si": "Speed (m/s)",
-    "acc_si": "Acceleration (m/s2)",
-    "corr_grade": "Grade (deg)",
-    "state": "Engine State",
-}
-for key, value in lagged_features.items():
-    for i in range(value):
-        labels.update({key + "_l" + str(i + 1): labels[key] + " - lag " + str(i + 1)})
-
-#%%% [markdown]
-# ### Loading observations from Excel into a pandas dataframe
-dir = r"/Users/ehsan/Dropbox/Academia/PhD Thesis/Field Experiments/Veepeak"
-file_original = r"/" + vehicle + "/Processed/" + vehicle + ".xlsx"
-file_hmm = r"/" + vehicle + "/Processed/" + vehicle + " - HMM Output.xlsx"
-path = dir + file_original
-reader = pd.ExcelFile(path)
-df = pd.read_excel(reader, "Prepared for Modeling")
-path = dir + file_hmm
-reader = pd.ExcelFile(path)
-df["state"] = pd.read_excel(reader, "HMM Output").astype(float)
+from sklearn.svm import SVR
+from sklearn.model_selection import GridSearchCV, KFold
+from sklearn import preprocessing
+from sklearn.metrics.pairwise import rbf_kernel, linear_kernel, polynomial_kernel
+import seaborn as sns
 
 #%% [markdown]
-# ### Adding custom lagged variables to dataframe
-df = df[model_features + [dependent]]
-for feature, lag_order in lagged_features.items():
-    for i in range(lag_order):
-        new_feature = feature + "_l" + str(i + 1)
-        df[new_feature] = df[feature].shift(i + 1)
-        model_features.append(new_feature)
-df = df.dropna()
+# ### Loading sample data from Excel to a pandas dataframe
+def load_sample_from_Excel(vehicle, sample_size, input_index):
+    directory = "./Field Experiments/Veepeak/" + vehicle + "/Processed/"
+    input_file = vehicle + " - {}.xlsx".format(input_index)
+    input_path = directory + input_file
+    sheets_dict = pd.read_excel(input_path, sheet_name=None, header=0)
+    df = pd.DataFrame()
+    for _, sheet in sheets_dict.items():
+        df = df.append(sheet)
+    df.reset_index(inplace=True, drop=True)
+    if df.shape[0] > sample_size:
+        df = df.sample(sample_size)
+    else:
+        sample_size = df.shape[0]
+    return df, sample_size
+
 
 #%% [markdown]
-# ### Splitting data into train and test segments and selecting features for modeling
-train_set = df.sample(frac=split_ratio["train"], random_state=seed)
-leftover = df.drop(train_set.index)
-dev_set = leftover.sample(frac=split_ratio["dev"] / (1.0 - split_ratio["train"]))
-test_set = leftover.drop(dev_set.index)
+# ### Adding lagged features to the dataframe
+def add_lagged_features(df, features, lagged_features, lag_order):
+    df_temp = df.copy()
+    total_features = features
+    for feature in lagged_features:
+        for i in range(lag_order):
+            new_feature = feature + "_L" + str(i + 1)
+            total_features.append(new_feature)
+            df_temp[new_feature] = df_temp[feature].shift(i + 1)
+    df_temp.dropna(inplace=True)
+    return df_temp, total_features
+
 
 #%% [markdown]
 # ### Feature scaling
-train_set_scaled, dev_set_scaled, test_set_scaled = train_set, dev_set, test_set
-scaler = preprocessing.StandardScaler().fit(train_set[model_features])
-train_set_scaled[model_features] = scaler.transform(train_set[model_features])
-dev_set_scaled[model_features] = scaler.transform(dev_set[model_features])
-test_set_scaled[model_features] = scaler.transform(test_set[model_features])
+def scale(df, feature_names):
+    df_temp = df.copy()
+    scaler = preprocessing.StandardScaler().fit(df_temp[feature_names])
+    df_temp[feature_names] = scaler.transform(df_temp[feature_names])
+    return df_temp, scaler
+
+
+#%% [markdown]
+# ### RBF and Linear, Multiplicative Kernel
+def build_rbf_lin_mul(**kwargs):
+    def rbf_lin_mul(x, y):
+        k1 = linear_kernel(x, y)
+        k2 = rbf_kernel(x, y, kwargs["gamma"])
+        return k1 * k2
+
+    return rbf_lin_mul
+
+
+#%% [markdown]
+# ### RBF and Linear, Linear Combination Kernel
+def build_rbf_lin_lin(**kwargs):
+    def rbf_lin_lin(x, y):
+        k1 = linear_kernel(x, y)
+        k2 = rbf_kernel(x, y, kwargs["gamma"])
+        return kwargs["c1"] * k1 + kwargs["c2"] * k2
+
+    return rbf_lin_lin
+
+
+#%% [markdown]
+# ### RBF and Polynomial, Multiplicative Kernel
+def build_rbf_pol_mul(**kwargs):
+    def rbf_pol_mul(x, y):
+        k1 = polynomial_kernel(x, y, kwargs["degree"], kwargs["gamma"])
+        k2 = rbf_kernel(x, y, kwargs["gamma"])
+        return k1 * k2
+
+    return rbf_pol_mul
+
+
+#%% [markdown]
+# ### RBF and Polynomial, Linear Combination Kernel
+def build_rbf_pol_lin(**kwargs):
+    def rbf_pol_lin(x, y):
+        k1 = polynomial_kernel(x, y, kwargs["degree"], kwargs["gamma"])
+        k2 = rbf_kernel(x, y, kwargs["gamma"])
+        return kwargs["c1"] * k1 + kwargs["c2"] * k2
+
+    return rbf_pol_lin
+
+
+#%% [markdown]
+# ### Tuning the SVR model using grid search and cross validation
+def tune_svr(df, n_splits, param_grid, dependent, predicted, total_features):
+    df_temp = df.copy()
+    cv = KFold(n_splits=n_splits, shuffle=True)
+    clf = GridSearchCV(
+        SVR(kernel="rbf"),
+        param_grid=param_grid,
+        cv=cv,
+        scoring="r2",
+        verbose=1,
+        n_jobs=-1,
+    )
+    clf.fit(df_temp[total_features], df_temp[dependent])
+    df_temp[predicted] = clf.predict(df_temp[total_features])
+    df_temp[[dependent] + [predicted]] = (
+        np.sqrt(scaler.var_[-1]) * df_temp[[dependent] + [predicted]] + scaler.mean_[-1]
+    )
+    return df_temp, clf.best_score_, clf.best_estimator_, clf.cv_results_
+
+
+#%% [markdown]
+# ### Plotting the grid search results and save plot to file
+def plot_grid_search_results(
+    vehicle,
+    model_type,
+    model_structure,
+    output_index,
+    sample_size,
+    param_grid,
+    best_score,
+    cv_results,
+):
+    results = pd.DataFrame()
+    results["epsilon"] = cv_results["param_epsilon"]
+    results["gamma"] = cv_results["param_gamma"]
+    results["C"] = cv_results["param_C"]
+    results["score"] = cv_results["mean_test_score"]
+    results.sort_values(["epsilon", "gamma", "C"], ascending=True, inplace=True)
+    fig, axn = plt.subplots(1, len(param_grid["epsilon"]))
+    fig.tight_layout()
+    fig.set_size_inches(20, 5)
+    fig.suptitle(
+        "Experiment: {0}\nSample Size: {1}\nFive-Fold CV Score: {2}".format(
+            vehicle, sample_size, np.round(best_score, 3)
+        )
+    )
+    for i, ax in enumerate(axn.flat):
+        epsilon = param_grid["epsilon"][i]
+        sub_result = results.loc[results["epsilon"] == epsilon]
+        sub_result = sub_result.drop(["epsilon"], axis=1)
+        matrix = sub_result.pivot("C", "gamma", "score")
+        ax.set_width = 10
+        ax.set_height = 10
+        sns.heatmap(
+            matrix,
+            cmap="RdYlGn",
+            ax=ax,
+            vmin=0,
+            vmax=1,
+            annot=True,
+            square=True,
+            cbar=True,
+            cbar_kws={"orientation": "horizontal"},
+        )
+        ax.set_title("epsilon = {}".format(np.round(epsilon, 5)))
+    plt.show()
+    fig.savefig(
+        "./{0}/{1} - {2}/{3} - Grid Search Result.jpg".format(
+            model_type, output_index, model_structure, vehicle
+        ),
+        dpi=300,
+        quality=95,
+        bbox_inches="tight",
+    )
+
+
+#%% [markdown]
+# ### Plot predictions vs. ground-truth and save plot to file
+def plot_accuracy(
+    df,
+    vehicle,
+    model_type,
+    model_structure,
+    output_index,
+    sample_size,
+    labels,
+    dependent,
+    predicted,
+    best_score,
+):
+    fig, ax = plt.subplots(1, 1)
+    fig.tight_layout()
+    ax = sns.regplot(
+        x=dependent,
+        y=predicted,
+        data=df,
+        fit_reg=True,
+        scatter_kws={"color": "blue"},
+        line_kws={"color": "red"},
+    )
+    ax.set_xlabel(labels[dependent])
+    ax.set_ylabel(labels[predicted])
+    ax.set_xlim(0)
+    ax.set_ylim(0)
+    ax.set_title(
+        "Experiment: {0}\nSample Size: {1}\nFive-Fold CV Score: {2}\n".format(
+            vehicle, sample_size, np.round(best_score, 3)
+        )
+    )
+    plt.show()
+    fig.savefig(
+        "./{0}/{1} - {2}/{3} - Observed vs. Predicted.jpg".format(
+            model_type, output_index, model_structure, vehicle
+        ),
+        dpi=300,
+        quality=95,
+        bbox_inches="tight",
+    )
+
+
+#%% [markdown]
+# ### Saving the predicted field back to Excel file
+def save_back_to_Excel(df, vehicle, sample_size, output_index):
+    directory = "./Field Experiments/Veepeak/" + vehicle + "/Processed/"
+    output_file = vehicle + " - {}.xlsx".format(output_index)
+    output_path = directory + output_file
+    with pd.ExcelWriter(output_path, engine="openpyxl", mode="w") as writer:
+        df.to_excel(writer, header=True, index=None)
+    print("Data is saved to Excel successfully!")
+    return None
+
+
+#%% [markdown]
+# ### General settings
+plt.style.use("classic")
+pd.options.mode.chained_assignment = None
+EXPERIMENTS = [
+    "009 Renault Logan 2014 (1.6L Manual)",
+    "010 JAC J5 2015 (1.8L Auto)",
+    "011 JAC S5 2017 (2.0L TC Auto)",
+    "012 IKCO Dena 2016 (1.65L Manual)",
+    "013 Geely Emgrand7 2014 (1.8L Auto)",
+    "014 Kia Cerato 2016 (2.0L Auto)",
+    "015 VW Jetta 2016 (1.4L TC Auto)",
+    "016 Hyundai Sonata Sport 2019 (2.4L Auto)",
+    "017 Chevrolet Trax 2019 (1.4L TC Auto)",
+    "018 Hyundai Azera 2006 (3.8L Auto)",
+    "019 Hyundai Elantra GT 2019 (2.0L Auto)",
+    "020 Honda Civic 2014 (1.8L Auto)",
+    "021 Chevrolet N300 2014 (1.2L Manual)",
+    "022 Chevrolet Spark GT 2012 (1.2L Manual)",
+    "023 Mazda 2 2012 (1.4L Auto)",
+    "024 Renault Logan 2010 (1.4 L Manual)",
+    "025 Chevrolet Captiva 2010 (2.4L Auto)",
+    "026 Nissan Versa 2013 (1.6L Auto)",
+    "027 Chevrolet Cruze 2011 (1.8L Manual)",
+    "028 Nissan Sentra 2019 (1.8L Auto)",
+    "029 Ford Escape 2006 (3.0L Auto)",
+    "030 Ford Focus 2012 (2.0L Auto)",
+    "031 Mazda 3 2016 (2.0L Auto)",
+    "032 Toyota RAV4 2016 (2.5L Auto)",
+]
 
 #%% [markdown]
 # ### SVR settings
-kernel = "rbf"
-C = 100
-epsilon = 0.1
-gamma = "scale"
-degree = 4  # only for polynomial kernel
-settings_report = "SVR (Kernel = {0}, C = {1}, epsilon = {2}, gamma = {3}, degree = {4})".format(
-    kernel, C, epsilon, gamma, degree
-)
-
-#%% [markdown]
-# ### SVR modeling
-svr = SVR(kernel=kernel, C=C, epsilon=epsilon, gamma=gamma, degree=degree)
-svr.fit(train_set_scaled[model_features], train_set[dependent])
-
-#%% [markdown]
-# ### SVR Modeling score (R-squared) calculation
-train_score = round(
-    svr.score(train_set_scaled[model_features], train_set[dependent]), 2
-)
-dev_score = round(svr.score(dev_set_scaled[model_features], dev_set[dependent]), 2)
-test_set_scaled["predictions"] = svr.predict(test_set_scaled[model_features])
-score_report = "Train Score: {0} | Dev Score: {1}".format(train_score, dev_score)
-print(settings_report, "\n", score_report)
-
-#%% [markdown]
-# ### Tuning the SVR model using grid search
-param_grid = {
-    "kernel": ["rbf"],
-    "gamma": [1e-3],
-    "C": [0.1, 1, 10, 100],
-    "epsilon": np.linspace(0.01, 0.1, 5),
+DEPENDENT = "FCR_LH"
+PREDICTED = "FCR_LH_PRED"
+FEATURES = ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG", "RPM"]
+LAGGED_FEATURES = ["NO_OUTLIER_GRADE_DEG"]
+LAG_ORDER = 0
+SAMPLE_SIZE = 5400
+N_SPLITS = 5
+PARAM_GRID = {
+    "gamma": np.logspace(-3, 1, num=5, base=10),
+    "C": np.logspace(-1, 2, num=4, base=10),
+    "epsilon": np.logspace(-4, 0, num=5, base=10),
 }
-print("Tuning hyper-parameters ...")
-clf = GridSearchCV(SVR(), param_grid, cv=5, scoring="r2")
-clf.fit(train_set_scaled[model_features], train_set[dependent])
-print("Best parameters set found on development set:\n")
-print(clf.best_params_)
+LABELS = {
+    "FCR_LH": "Observed Fuel Consumption Rate (L/H)",
+    "FCR_LH_PRED": "Predicted Fuel Consumption Rate (L/H)",
+    "RPM": "Engine Speed (rev/min)",
+    "RPM_PRED": "Predicted Engine Speed (rev/min)",
+    "SPD_KH": "Speed (Km/h)",
+    "ACC_MS2": "Acceleration (m/s2)",
+    "NO_OUTLIER_GRADE_DEG": "Road Grade (Deg)",
+}
+MODEL_TYPE = "SVR"
+MODEL_STRUCTURE = "FCR ~ SPD + ACC + GRADE + RPM"
+INPUT_INDEX = "01"
+OUTPUT_INDEX = "03"
 
 #%% [markdown]
-# ### Plotting the results (Contour Plots)
-pairs = list(itertools.combinations(model_features, 2))
-fig = plt.figure(figsize=(12, 4 * len(pairs)))
-gs = gridspec.GridSpec(len(pairs), 2, figure=fig, hspace=0.3)
-gs.tight_layout(fig)
-# fig.suptitle(vehicle + '\n' + settings_report + '\n' + score_report, fontsize = 16)
-for index, g in enumerate(gs):
-    ax = fig.add_subplot(g)
-    if index == 0:
-        ax.set_title("Observations")
-    elif index == 1:
-        ax.set_title("Predictions")
-    p_index = int(index / 2)
-    p_flag = True if index % 2 == 0 else False
-    if p_flag:
-        set, output = train_set_scaled, dependent
-    else:
-        set, output = test_set_scaled, "predictions"
-    x = set[model_features][pairs[p_index][0]]
-    y = set[model_features][pairs[p_index][1]]
-    z = set[output]
-    if p_flag:
-        x_min, x_max, y_min, y_max, z_max = x.min(), x.max(), y.min(), y.max(), z.max()
-    cntr = ax.tricontourf(
-        x,
-        y,
-        z,
-        levels=np.linspace(0, round(z_max, 1), 11),
-        cmap="Spectral_r",
-        antialiased=True,
+# ### Batch execution on all vehicles and their trips
+for vehicle in EXPERIMENTS:
+    # Adding lagged features to the dataframe and sampling
+    df, sample_size = load_sample_from_Excel(vehicle, SAMPLE_SIZE, INPUT_INDEX)
+    # Adding lagged features to the dataframe
+    df, TOTAL_FEATURES = add_lagged_features(df, FEATURES, LAGGED_FEATURES, LAG_ORDER)
+    # Feature scaling
+    df, scaler = scale(df, TOTAL_FEATURES + [DEPENDENT])
+    # Tuning the SVR model using grid search and cross validation
+    df, best_score, best_estimator, cv_results = tune_svr(
+        df, N_SPLITS, PARAM_GRID, DEPENDENT, PREDICTED, TOTAL_FEATURES
     )
-    ax.axis((x_min, x_max, y_min, y_max))
-    ax.set_xlabel(labels[pairs[p_index][0]])
-    ax.set_ylabel(labels[pairs[p_index][1]])
-    ax.grid(color="k", linestyle=":", linewidth=1, alpha=0.25)
-    fig.colorbar(cntr, ax=ax)
+    # Plotting the grid search results and save plots to file
+    plot_grid_search_results(
+        vehicle,
+        MODEL_TYPE,
+        MODEL_STRUCTURE,
+        OUTPUT_INDEX,
+        sample_size,
+        PARAM_GRID,
+        best_score,
+        cv_results,
+    )
+    # Plot predictions vs. ground-truth and save plot to file
+    plot_accuracy(
+        df,
+        vehicle,
+        MODEL_TYPE,
+        MODEL_STRUCTURE,
+        OUTPUT_INDEX,
+        sample_size,
+        LABELS,
+        DEPENDENT,
+        PREDICTED,
+        best_score,
+    )
+    # Saving the predicted field back to Excel file
+    save_back_to_Excel(df, vehicle, sample_size, OUTPUT_INDEX)
 
-fig.savefig("svr.png", bbox_inches="tight", dpi=200)
-plt.show()
+
+#%%
