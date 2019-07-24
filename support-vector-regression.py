@@ -222,9 +222,9 @@ def plot_accuracy(
 
 #%% [markdown]
 # ### Save the predicted field back to Excel file
-def save_back_to_Excel(df, vehicle, output_index):
+def save_back_to_Excel(df, vehicle, model_type, output_index):
     directory = "./Field Experiments/Veepeak/" + vehicle + "/Processed/"
-    output_file = vehicle + " - {}.xlsx".format(output_index)
+    output_file = vehicle + " - {0} - {1}.xlsx".format(model_type, output_index)
     output_path = directory + output_file
     with pd.ExcelWriter(output_path, engine="openpyxl", mode="w") as writer:
         df.to_excel(writer, header=True, index=None)
@@ -329,4 +329,4 @@ for vehicle in EXPERIMENTS:
         best_score,
     )
     # Save the predicted field back to Excel file
-    save_back_to_Excel(df, vehicle, OUTPUT_INDEX)
+    save_back_to_Excel(df, vehicle, MODEL_TYPE, OUTPUT_INDEX)
