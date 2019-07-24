@@ -15,7 +15,7 @@ import seaborn as sns
 
 #%% [markdown]
 # ### Loading sample data from Excel to a pandas dataframe
-def load_sample_from_Excel(vehicle, sample_size, input_index):
+def load_sample_from_Excel(vehicle, max_sample_size, input_index):
     directory = "./Field Experiments/Veepeak/" + vehicle + "/Processed/"
     input_file = vehicle + " - {}.xlsx".format(input_index)
     input_path = directory + input_file
@@ -24,7 +24,8 @@ def load_sample_from_Excel(vehicle, sample_size, input_index):
     for _, sheet in sheets_dict.items():
         df = df.append(sheet)
     df.reset_index(inplace=True, drop=True)
-    if df.shape[0] > sample_size:
+    if df.shape[0] > max_sample_size:
+        sample_size = max_sample_size
         df = df.sample(sample_size)
     else:
         sample_size = df.shape[0]
@@ -176,7 +177,7 @@ def plot_grid_search_results(
 
 
 #%% [markdown]
-# ### Plot predictions vs. ground-truth and save plot to file
+# ### Plotting predictions vs. ground-truth and save plot to file
 def plot_accuracy(
     df,
     vehicle,
@@ -221,7 +222,7 @@ def plot_accuracy(
 
 #%% [markdown]
 # ### Saving the predicted field back to Excel file
-def save_back_to_Excel(df, vehicle, sample_size, output_index):
+def save_back_to_Excel(df, vehicle, output_index):
     directory = "./Field Experiments/Veepeak/" + vehicle + "/Processed/"
     output_file = vehicle + " - {}.xlsx".format(output_index)
     output_path = directory + output_file
@@ -266,10 +267,10 @@ EXPERIMENTS = [
 # ### SVR settings
 DEPENDENT = "FCR_LH"
 PREDICTED = "FCR_LH_PRED"
-FEATURES = ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG", "RPM"]
+FEATURES = ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG", "RPM_PRED"]
 LAGGED_FEATURES = ["NO_OUTLIER_GRADE_DEG"]
 LAG_ORDER = 0
-SAMPLE_SIZE = 5400
+MAX_SAMPLE_SIZE = 5400
 N_SPLITS = 5
 PARAM_GRID = {
     "gamma": np.logspace(-3, 1, num=5, base=10),
@@ -279,22 +280,22 @@ PARAM_GRID = {
 LABELS = {
     "FCR_LH": "Observed Fuel Consumption Rate (L/H)",
     "FCR_LH_PRED": "Predicted Fuel Consumption Rate (L/H)",
-    "RPM": "Engine Speed (rev/min)",
+    "RPM": "Observed Engine Speed (rev/min)",
     "RPM_PRED": "Predicted Engine Speed (rev/min)",
     "SPD_KH": "Speed (Km/h)",
     "ACC_MS2": "Acceleration (m/s2)",
     "NO_OUTLIER_GRADE_DEG": "Road Grade (Deg)",
 }
 MODEL_TYPE = "SVR"
-MODEL_STRUCTURE = "FCR ~ SPD + ACC + GRADE + RPM"
-INPUT_INDEX = "01"
-OUTPUT_INDEX = "03"
+MODEL_STRUCTURE = "FCR ~ SPD + ACC + GRADE + RPM_PRED_SVR"
+INPUT_INDEX = "04"
+OUTPUT_INDEX = "05"
 
 #%% [markdown]
 # ### Batch execution on all vehicles and their trips
 for vehicle in EXPERIMENTS:
     # Adding lagged features to the dataframe and sampling
-    df, sample_size = load_sample_from_Excel(vehicle, SAMPLE_SIZE, INPUT_INDEX)
+    df, sample_size = load_sample_from_Excel(vehicle, MAX_SAMPLE_SIZE, INPUT_INDEX)
     # Adding lagged features to the dataframe
     df, TOTAL_FEATURES = add_lagged_features(df, FEATURES, LAGGED_FEATURES, LAG_ORDER)
     # Feature scaling
@@ -328,7 +329,4 @@ for vehicle in EXPERIMENTS:
         best_score,
     )
     # Saving the predicted field back to Excel file
-    save_back_to_Excel(df, vehicle, sample_size, OUTPUT_INDEX)
-
-
-#%%
+    save_back_to_Excel(df, vehicle, OUTPUT_INDEX)
