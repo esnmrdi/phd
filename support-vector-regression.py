@@ -14,7 +14,7 @@ from sklearn.metrics.pairwise import rbf_kernel, linear_kernel, polynomial_kerne
 import seaborn as sns
 
 #%% [markdown]
-# ### Loading sample data from Excel to a pandas dataframe
+# ### Load sample data from Excel to a pandas dataframe
 def load_sample_from_Excel(vehicle, max_sample_size, input_index):
     directory = "./Field Experiments/Veepeak/" + vehicle + "/Processed/"
     input_file = vehicle + " - {}.xlsx".format(input_index)
@@ -33,7 +33,7 @@ def load_sample_from_Excel(vehicle, max_sample_size, input_index):
 
 
 #%% [markdown]
-# ### Adding lagged features to the dataframe
+# ### Add lagged features to the dataframe
 def add_lagged_features(df, features, lagged_features, lag_order):
     df_temp = df.copy()
     total_features = features
@@ -47,7 +47,7 @@ def add_lagged_features(df, features, lagged_features, lag_order):
 
 
 #%% [markdown]
-# ### Feature scaling
+# ### Scale the features
 def scale(df, feature_names):
     df_temp = df.copy()
     scaler = preprocessing.StandardScaler().fit(df_temp[feature_names])
@@ -100,7 +100,7 @@ def build_rbf_pol_lin(**kwargs):
 
 
 #%% [markdown]
-# ### Tuning the SVR model using grid search and cross validation
+# ### Tune the SVR model using grid search and cross validation
 def tune_svr(df, n_splits, param_grid, dependent, predicted, total_features):
     df_temp = df.copy()
     cv = KFold(n_splits=n_splits, shuffle=True)
@@ -121,7 +121,7 @@ def tune_svr(df, n_splits, param_grid, dependent, predicted, total_features):
 
 
 #%% [markdown]
-# ### Plotting the grid search results and save plot to file
+# ### Plot the grid search results and save plot to file
 def plot_grid_search_results(
     vehicle,
     model_type,
@@ -177,7 +177,7 @@ def plot_grid_search_results(
 
 
 #%% [markdown]
-# ### Plotting predictions vs. ground-truth and save plot to file
+# ### Plot predictions vs. ground-truth and save plot to file
 def plot_accuracy(
     df,
     vehicle,
@@ -221,7 +221,7 @@ def plot_accuracy(
 
 
 #%% [markdown]
-# ### Saving the predicted field back to Excel file
+# ### Save the predicted field back to Excel file
 def save_back_to_Excel(df, vehicle, output_index):
     directory = "./Field Experiments/Veepeak/" + vehicle + "/Processed/"
     output_file = vehicle + " - {}.xlsx".format(output_index)
@@ -294,17 +294,17 @@ OUTPUT_INDEX = "05"
 #%% [markdown]
 # ### Batch execution on all vehicles and their trips
 for vehicle in EXPERIMENTS:
-    # Adding lagged features to the dataframe and sampling
+    # Add lagged features to the dataframe and sampling
     df, sample_size = load_sample_from_Excel(vehicle, MAX_SAMPLE_SIZE, INPUT_INDEX)
-    # Adding lagged features to the dataframe
+    # Add lagged features to the dataframe
     df, TOTAL_FEATURES = add_lagged_features(df, FEATURES, LAGGED_FEATURES, LAG_ORDER)
-    # Feature scaling
+    # Scale the features
     df, scaler = scale(df, TOTAL_FEATURES + [DEPENDENT])
-    # Tuning the SVR model using grid search and cross validation
+    # Tune the SVR model using grid search and cross validation
     df, best_score, best_estimator, cv_results = tune_svr(
         df, N_SPLITS, PARAM_GRID, DEPENDENT, PREDICTED, TOTAL_FEATURES
     )
-    # Plotting the grid search results and save plots to file
+    # Plot the grid search results and save plots to file
     plot_grid_search_results(
         vehicle,
         MODEL_TYPE,
@@ -328,5 +328,5 @@ for vehicle in EXPERIMENTS:
         PREDICTED,
         best_score,
     )
-    # Saving the predicted field back to Excel file
+    # Save the predicted field back to Excel file
     save_back_to_Excel(df, vehicle, OUTPUT_INDEX)
