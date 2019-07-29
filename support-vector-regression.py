@@ -16,7 +16,7 @@ import seaborn as sns
 #%% [markdown]
 # ### Load sample data from Excel to a pandas dataframe
 def load_sample_from_Excel(vehicle, max_sample_size, input_index):
-    directory = "./Field Experiments/Veepeak/" + vehicle + "/Processed/"
+    directory = "../Field Experiments/Veepeak/" + vehicle + "/Processed/"
     input_file = vehicle + " - {}.xlsx".format(input_index)
     input_path = directory + input_file
     sheets_dict = pd.read_excel(input_path, sheet_name=None, header=0)
@@ -167,7 +167,7 @@ def plot_grid_search_results(
         ax.set_title("epsilon = {}".format(np.round(epsilon, 5)))
     plt.show()
     fig.savefig(
-        "./{0}/{1} - {2}/{3} - Grid Search Result.jpg".format(
+        "../Modeling Outputs/{0}/{1} - {2}/{3} - Grid Search Result.jpg".format(
             model_type, output_index, model_structure, vehicle
         ),
         dpi=300,
@@ -211,7 +211,7 @@ def plot_accuracy(
     )
     plt.show()
     fig.savefig(
-        "./{0}/{1} - {2}/{3} - Observed vs. Predicted.jpg".format(
+        "../Modeling Outputs/{0}/{1} - {2}/{3} - Observed vs. Predicted.jpg".format(
             model_type, output_index, model_structure, vehicle
         ),
         dpi=300,
@@ -223,7 +223,7 @@ def plot_accuracy(
 #%% [markdown]
 # ### Save the predicted field back to Excel file
 def save_back_to_Excel(df, vehicle, model_type, output_index):
-    directory = "./Field Experiments/Veepeak/" + vehicle + "/Processed/"
+    directory = "../Field Experiments/Veepeak/" + vehicle + "/Processed/"
     output_file = vehicle + " - {0} - {1}.xlsx".format(model_type, output_index)
     output_path = directory + output_file
     with pd.ExcelWriter(output_path, engine="openpyxl", mode="w") as writer:
