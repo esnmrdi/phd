@@ -1,5 +1,4 @@
 .DS_Store
 playground.py
 .vscode/
-ANN/
-SVR/
+Output/
