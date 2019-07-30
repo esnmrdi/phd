@@ -139,7 +139,6 @@ def plot_grid_search_results(
     results["score"] = cv_results["mean_test_score"]
     results.sort_values(["epsilon", "gamma", "C"], ascending=True, inplace=True)
     fig, axn = plt.subplots(1, len(param_grid["epsilon"]))
-    fig.tight_layout()
     fig.set_size_inches(20, 5)
     fig.suptitle(
         "Experiment: {0}\nSample Size: {1}\nFive-Fold CV Score: {2}".format(
@@ -191,7 +190,6 @@ def plot_accuracy(
     best_score,
 ):
     fig, ax = plt.subplots(1, 1)
-    fig.tight_layout()
     ax = sns.regplot(
         x=dependent,
         y=predicted,
