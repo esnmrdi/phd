@@ -15,9 +15,9 @@ import seaborn as sns
 
 #%% [markdown]
 # ### Load sample data from Excel to a pandas dataframe
-def load_sample_from_Excel(vehicle, max_sample_size, input_index):
+def load_sample_from_Excel(vehicle, max_sample_size, input_type, input_index):
     directory = "../Field Experiments/Veepeak/" + vehicle + "/Processed/"
-    input_file = vehicle + " - {}.xlsx".format(input_index)
+    input_file = vehicle + " - {0} - {1}.xlsx".format(input_type, input_index)
     input_path = directory + input_file
     sheets_dict = pd.read_excel(input_path, sheet_name=None, header=0)
     df = pd.DataFrame()
@@ -124,8 +124,8 @@ def tune_svr(df, n_splits, param_grid, dependent, predicted, total_features):
 # ### Plot the grid search results and save plot to file
 def plot_grid_search_results(
     vehicle,
-    model_type,
     model_structure,
+    output_type,
     output_index,
     sample_size,
     param_grid,
@@ -168,7 +168,7 @@ def plot_grid_search_results(
     plt.show()
     fig.savefig(
         "../Modeling Outputs/{0}/{1} - {2}/{3} - Grid Search Result.jpg".format(
-            model_type, output_index, model_structure, vehicle
+            output_type, output_index, model_structure, vehicle
         ),
         dpi=300,
         quality=95,
@@ -181,8 +181,8 @@ def plot_grid_search_results(
 def plot_accuracy(
     df,
     vehicle,
-    model_type,
     model_structure,
+    output_type,
     output_index,
     sample_size,
     labels,
@@ -212,7 +212,7 @@ def plot_accuracy(
     plt.show()
     fig.savefig(
         "../Modeling Outputs/{0}/{1} - {2}/{3} - Observed vs. Predicted.jpg".format(
-            model_type, output_index, model_structure, vehicle
+            output_type, output_index, model_structure, vehicle
         ),
         dpi=300,
         quality=95,
@@ -222,9 +222,9 @@ def plot_accuracy(
 
 #%% [markdown]
 # ### Save the predicted field back to Excel file
-def save_back_to_Excel(df, vehicle, model_type, output_index):
+def save_back_to_Excel(df, vehicle, output_type, output_index):
     directory = "../Field Experiments/Veepeak/" + vehicle + "/Processed/"
-    output_file = vehicle + " - {0} - {1}.xlsx".format(model_type, output_index)
+    output_file = vehicle + " - {0} - {1}.xlsx".format(output_type, output_index)
     output_path = directory + output_file
     with pd.ExcelWriter(output_path, engine="openpyxl", mode="w") as writer:
         df.to_excel(writer, header=True, index=None)
@@ -286,8 +286,9 @@ LABELS = {
     "ACC_MS2": "Acceleration (m/s2)",
     "NO_OUTLIER_GRADE_DEG": "Road Grade (Deg)",
 }
-MODEL_TYPE = "SVR"
 MODEL_STRUCTURE = "FCR ~ SPD + ACC + GRADE + RPM_PRED_SVR"
+INPUT_TYPE = "NONE"
+OUTPUT_TYPE = "SVR"
 INPUT_INDEX = "04"
 OUTPUT_INDEX = "05"
 
@@ -295,7 +296,7 @@ OUTPUT_INDEX = "05"
 # ### Batch execution on all vehicles and their trips
 for vehicle in EXPERIMENTS:
     # Add lagged features to the dataframe and sampling
-    df, sample_size = load_sample_from_Excel(vehicle, MAX_SAMPLE_SIZE, INPUT_INDEX)
+    df, sample_size = load_sample_from_Excel(vehicle, MAX_SAMPLE_SIZE, INPUT_TYPE, INPUT_INDEX)
     # Add lagged features to the dataframe
     df, TOTAL_FEATURES = add_lagged_features(df, FEATURES, LAGGED_FEATURES, LAG_ORDER)
     # Scale the features
@@ -307,7 +308,7 @@ for vehicle in EXPERIMENTS:
     # Plot the grid search results and save plots to file
     plot_grid_search_results(
         vehicle,
-        MODEL_TYPE,
+        OUTPUT_TYPE,
         MODEL_STRUCTURE,
         OUTPUT_INDEX,
         sample_size,
@@ -319,7 +320,7 @@ for vehicle in EXPERIMENTS:
     plot_accuracy(
         df,
         vehicle,
-        MODEL_TYPE,
+        OUTPUT_TYPE,
         MODEL_STRUCTURE,
         OUTPUT_INDEX,
         sample_size,
@@ -329,4 +330,4 @@ for vehicle in EXPERIMENTS:
         best_score,
     )
     # Save the predicted field back to Excel file
-    save_back_to_Excel(df, vehicle, MODEL_TYPE, OUTPUT_INDEX)
+    save_back_to_Excel(df, vehicle, OUTPUT_TYPE, OUTPUT_INDEX)
