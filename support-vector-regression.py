@@ -164,6 +164,7 @@ def plot_grid_search_results(
             cbar_kws={"orientation": "horizontal"},
         )
         ax.set_title("epsilon = {}".format(np.round(epsilon, 5)))
+    plt.tight_layout()
     plt.show()
     fig.savefig(
         "../Modeling Outputs/{0}/{1} - {2}/{3} - Grid Search Result.jpg".format(
@@ -207,6 +208,7 @@ def plot_accuracy(
             vehicle, sample_size, np.round(best_score, 3)
         )
     )
+    plt.tight_layout()
     plt.show()
     fig.savefig(
         "../Modeling Outputs/{0}/{1} - {2}/{3} - Observed vs. Predicted.jpg".format(
