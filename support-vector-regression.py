@@ -145,8 +145,8 @@ def plot_grid_search_results(
             vehicle, sample_size, np.round(best_score, 3)
         )
     )
-    for i, ax in enumerate(axn.flat):
-        epsilon = param_grid["epsilon"][i]
+    for index, ax in enumerate(axn.flat):
+        epsilon = param_grid["epsilon"][index]
         sub_result = results.loc[results["epsilon"] == epsilon]
         sub_result = sub_result.drop(["epsilon"], axis=1)
         matrix = sub_result.pivot("C", "gamma", "score")
