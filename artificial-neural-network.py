@@ -248,7 +248,8 @@ def plot_accuracy(df, vehicle, sample_size, scores, settings):
             line_kws={"color": "red"},
         )
         ax.set(
-            xlabel=settings["labels"][settings["dependent"]], ylabel=settings["labels"][settings["predicted"]]
+            xlabel=settings["labels"][settings["dependent"]],
+            ylabel=settings["labels"][settings["predicted"]],
         )
         ax.set_xlim(0)
         ax.set_ylim(0)
@@ -271,7 +272,9 @@ def plot_accuracy(df, vehicle, sample_size, scores, settings):
 # ### Save the predicted field back to Excel file
 def save_back_to_Excel(df, vehicle, settings):
     directory = "../Field Experiments/Veepeak/" + vehicle + "/Processed/"
-    output_file = vehicle + " - {0} - {1}.xlsx".format(settings["output_type"], settings["output_index"])
+    output_file = vehicle + " - {0} - {1}.xlsx".format(
+        settings["output_type"], settings["output_index"]
+    )
     output_path = directory + output_file
     with pd.ExcelWriter(output_path, engine="openpyxl", mode="w") as writer:
         df.to_excel(writer, header=True, index=None)
