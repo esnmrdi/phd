@@ -104,7 +104,7 @@ def build_rbf_pol_lin(**kwargs):
 
 #%% [markdown]
 # ### Tune the SVR model using grid search and cross validation
-def tune_svr(df, total_features, settings):
+def tune_svr(df, total_features, scaler, settings):
     df_temp = df.copy()
     cv = KFold(n_splits=settings["n_splits"], shuffle=True)
     clf = GridSearchCV(
@@ -297,7 +297,7 @@ for vehicle in EXPERIMENTS:
     # Scale the features
     df, scaler = scale(df, total_features, SETTINGS)
     # Tune the SVR model using grid search and cross validation
-    df, best_score, best_estimator, cv_results = tune_svr(df, total_features, SETTINGS)
+    df, best_score, best_estimator, cv_results = tune_svr(df, total_features, scaler, SETTINGS)
     # Plot the grid search results and save plots to file
     plot_grid_search_results(vehicle, sample_size, best_score, cv_results, SETTINGS)
     # Plot predictions vs. ground-truth and save plot to file
