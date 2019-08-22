@@ -7,11 +7,11 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.svm import SVR
 from sklearn.model_selection import GridSearchCV, KFold
 from sklearn import preprocessing
 from sklearn.metrics.pairwise import rbf_kernel, linear_kernel, polynomial_kernel
-import seaborn as sns
 
 #%% [markdown]
 # ### Load sample data from Excel to a pandas dataframe
@@ -56,6 +56,14 @@ def scale(df, total_features, settings):
     scaler = preprocessing.StandardScaler().fit(df_temp[feature_names])
     df_temp[feature_names] = scaler.transform(df_temp[feature_names])
     return df_temp, scaler
+
+
+#%% [markdown]
+# ### Reverse-scale the features
+def reverse_scale(df, scaler):
+    df_temp = df.copy()
+    df_temp = np.sqrt(scaler.var_[-1]) * df_temp + scaler.mean_[-1]
+    return df_temp
 
 
 #%% [markdown]
@@ -117,10 +125,8 @@ def tune_svr(df, total_features, scaler, settings):
     )
     clf.fit(df_temp[total_features], df_temp[settings["dependent"]])
     df_temp[settings["predicted"]] = clf.predict(df_temp[total_features])
-    df_temp[[settings["dependent"]] + [settings["predicted"]]] = (
-        np.sqrt(scaler.var_[-1])
-        * df_temp[[settings["dependent"]] + [settings["predicted"]]]
-        + scaler.mean_[-1]
+    df_temp[[settings["dependent"]] + [settings["predicted"]]] = reverse_scale(
+        df_temp[[settings["dependent"]] + [settings["predicted"]]], scaler
     )
     return df_temp, clf.best_score_, clf.best_estimator_, clf.cv_results_
 
@@ -143,7 +149,8 @@ def plot_grid_search_results(vehicle, sample_size, best_score, cv_results, setti
     fig.suptitle(
         "Experiment: {0}\nSample Size: {1}\nFive-Fold CV Score: {2}".format(
             vehicle, sample_size, np.round(best_score, 3)
-        )
+        ),
+        fontsize=18,
     )
     for index, ax in enumerate(axn.flat):
         epsilon = settings["param_grid"]["epsilon"][index]
@@ -180,7 +187,7 @@ def plot_grid_search_results(vehicle, sample_size, best_score, cv_results, setti
 #%% [markdown]
 # ### Plot predictions vs. ground-truth and save plot to file
 def plot_accuracy(df, vehicle, sample_size, best_score, settings):
-    fig, ax = plt.subplots(1, 1, figsize=(10, 10), constrained_layout=True)
+    fig, ax = plt.subplots(1, 1, figsize=(5, 5), constrained_layout=True)
     ax = sns.regplot(
         x=settings["dependent"],
         y=settings["predicted"],
@@ -190,8 +197,10 @@ def plot_accuracy(df, vehicle, sample_size, best_score, settings):
         scatter_kws={"color": "blue"},
         line_kws={"color": "red"},
     )
-    ax.set_xlabel(settings["labels"]["dependent"])
-    ax.set_ylabel(settings["labels"]["predicted"])
+    ax.set(
+        xlabel=settings["labels"][settings["dependent"]],
+        ylabel=settings["labels"][settings["predicted"]],
+    )
     ax.set_xlim(0)
     ax.set_ylim(0)
     ax.set_title(
@@ -228,7 +237,7 @@ def save_back_to_Excel(df, vehicle, settings):
 
 #%% [markdown]
 # ### General settings
-plt.style.use("classic")
+plt.style.use("bmh")
 pd.options.mode.chained_assignment = None
 EXPERIMENTS = [
     "009 Renault Logan 2014 (1.6L Manual)",
@@ -256,14 +265,15 @@ EXPERIMENTS = [
     "031 Mazda 3 2016 (2.0L Auto)",
     "032 Toyota RAV4 2016 (2.5L Auto)",
 ]
+EXPERIMENTS = ["010 JAC J5 2015 (1.8L Auto)"]
 
 #%% [markdown]
 # ### SVR settings
 SETTINGS = {
     "dependent": "FCR_LH",
     "predicted": "FCR_LH_PRED",
-    "features": ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG", "RPM_PRED"],
-    "lagged_features": ["NO_OUTLIER_GRADE_DEG"],
+    "features": ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG"],
+    "lagged_features": ["SPD_KH", "NO_OUTLIER_GRADE_DEG"],
     "lag_order": 0,
     "max_sample_size": 5400,
     "n_splits": 5,
@@ -281,11 +291,11 @@ SETTINGS = {
         "ACC_MS2": "Acceleration (m/s2)",
         "NO_OUTLIER_GRADE_DEG": "Road Grade (Deg)",
     },
-    "model_structure": "FCR ~ SPD + ACC + GRADE + RPM_PRED_SVR",
+    "model_structure": "FCR ~ SPD + ACC + GRADE",
     "input_type": "NONE",
     "output_type": "SVR",
-    "input_index": "04",
-    "output_index": "05",
+    "input_index": "01",
+    "output_index": "02",
 }
 
 #%% [markdown]
@@ -307,3 +317,6 @@ for vehicle in EXPERIMENTS:
     plot_accuracy(df, vehicle, sample_size, best_score, SETTINGS)
     # Save the predicted field back to Excel file
     save_back_to_Excel(df, vehicle, SETTINGS)
+
+
+#%%
