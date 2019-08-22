@@ -172,7 +172,10 @@ def tune_ann(df, total_features, scaler, settings):
 # ### Plot training history and save plot to file
 def plot_training_results(vehicle, sample_size, scores, histories, settings):
     fig, axn = plt.subplots(
-        len(settings["model_architectures"]), len(settings["metrics"]), figsize=(30, 10), constrained_layout=True
+        len(settings["model_architectures"]),
+        len(settings["metrics"]),
+        figsize=(30, 10),
+        constrained_layout=True,
     )
     for ax, metric in zip(axn[0], settings["metrics"]):
         ax.set_title(metric)
@@ -187,8 +190,8 @@ def plot_training_results(vehicle, sample_size, scores, histories, settings):
         history = histories[row]
         hist = pd.DataFrame(history.history)
         epochs = history.epoch
-        ax.set_width = 10
-        ax.set_height = 5
+        # ax.set_width = 10
+        # ax.set_height = 5
         sns.lineplot(x=epochs, y=hist[settings["metrics"][col]], ax=ax, label="Train")
         sns.lineplot(
             x=epochs, y=hist["val_" + settings["metrics"][col]], ax=ax, label="Test"
@@ -202,7 +205,6 @@ def plot_training_results(vehicle, sample_size, scores, histories, settings):
             ),
         )
         ax.legend(loc="best")
-    plt.show()
     fig.savefig(
         "../Modeling Outputs/{0}/{1} - {2}/{3} - Training Result.jpg".format(
             settings["output_type"],
@@ -219,13 +221,18 @@ def plot_training_results(vehicle, sample_size, scores, histories, settings):
 #%% [markdown]
 # ### Plot predictions vs. ground-truth and save plot to file
 def plot_accuracy(df, vehicle, sample_size, scores, settings):
-    fig, axn = plt.subplots(len(settings["model_architectures"]), 1, figsize=(10,10), constrained_layout=True)
+    fig, axn = plt.subplots(
+        len(settings["model_architectures"]),
+        1,
+        figsize=(10, 10),
+        constrained_layout=True,
+    )
     fig.suptitle(
         "Experiment: {0}\nSample Size: {1}\n# of Epochs: {2}".format(
             vehicle, sample_size, settings["n_epochs"]
         )
     )
-    for index, ax in enumerate(axn):
+    for index, ax in enumerate(axn.flat):
         ax.set_title(
             "Architecture: {0}\nTrain Score: {1} | Test Score: {2}".format(
                 settings["model_architectures"][index],
@@ -243,6 +250,7 @@ def plot_accuracy(df, vehicle, sample_size, scores, settings):
             y=predicted_temp,
             data=df,
             fit_reg=True,
+            ax=ax,
             scatter_kws={"color": "blue"},
             line_kws={"color": "red"},
         )
@@ -252,7 +260,6 @@ def plot_accuracy(df, vehicle, sample_size, scores, settings):
         )
         ax.set_xlim(0)
         ax.set_ylim(0)
-    plt.show()
     fig.savefig(
         "../Modeling Outputs/{0}/{1} - {2}/{3} - Observed vs. Predicted.jpg".format(
             settings["output_type"],
@@ -365,3 +372,5 @@ for vehicle in EXPERIMENTS:
     plot_accuracy(df, vehicle, sample_size, scores, SETTINGS)
     # Save the predicted field back to Excel file
     save_back_to_Excel(df, vehicle, SETTINGS)
+
+#%%
