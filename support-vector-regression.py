@@ -134,8 +134,7 @@ def plot_grid_search_results(vehicle, sample_size, best_score, cv_results, setti
     results["C"] = cv_results["param_C"]
     results["score"] = cv_results["mean_test_score"]
     results.sort_values(["epsilon", "gamma", "C"], ascending=True, inplace=True)
-    fig, axn = plt.subplots(1, len(settings["param_grid"]["epsilon"]))
-    fig.set_size_inches(20, 5)
+    fig, axn = plt.subplots(1, len(settings["param_grid"]["epsilon"]), figsize=(20, 5))
     fig.suptitle(
         "Experiment: {0}\nSample Size: {1}\nFive-Fold CV Score: {2}".format(
             vehicle, sample_size, np.round(best_score, 3)
