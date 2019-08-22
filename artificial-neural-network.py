@@ -7,11 +7,11 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 import tensorflow as tf
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
-import seaborn as sns
 
 
 #%% [markdown]
@@ -82,6 +82,14 @@ def scale(df, total_features, settings):
     scaler = preprocessing.StandardScaler().fit(df_temp[feature_names])
     df_temp[feature_names] = scaler.transform(df_temp[feature_names])
     return df_temp, scaler
+
+
+#%% [markdown]
+# ### Reverse-scale the features
+def reverse_scale(df, scaler):
+    df_temp = df.copy()
+    df_temp = np.sqrt(scaler.var_[-1]) * df_temp + scaler.mean_[-1]
+    return df_temp
 
 
 #%% [markdown]
@@ -157,14 +165,13 @@ def tune_ann(df, total_features, scaler, settings):
             settings["model_architectures"][index][1],
         )
         df_temp[predicted_temp] = model.predict(df_temp[total_features])
-        df_temp[[settings["dependent"]] + [predicted_temp]] = (
-            np.sqrt(scaler.var_[-1])
-            * df_temp[[settings["dependent"]] + [predicted_temp]]
-            + scaler.mean_[-1]
-        )
+        df_temp[predicted_temp] = reverse_scale(df_temp[predicted_temp], scaler)
         histories.append(history)
         score = calculate_score(model, train_set, test_set, total_features, settings)
         scores.append(score)
+    df_temp[settings["dependent"]] = reverse_scale(
+        df_temp[settings["dependent"]], scaler
+    )
     return df_temp, scores, histories
 
 
@@ -182,7 +189,8 @@ def plot_training_results(vehicle, sample_size, scores, histories, settings):
     fig.suptitle(
         "Experiment: {0}\nSample Size: {1}\n# of Epochs: {2}".format(
             vehicle, sample_size, settings["n_epochs"]
-        )
+        ),
+        fontsize=24,
     )
     for index, ax in enumerate(axn.flat):
         row = index // len(settings["metrics"])
@@ -190,8 +198,6 @@ def plot_training_results(vehicle, sample_size, scores, histories, settings):
         history = histories[row]
         hist = pd.DataFrame(history.history)
         epochs = history.epoch
-        # ax.set_width = 10
-        # ax.set_height = 5
         sns.lineplot(x=epochs, y=hist[settings["metrics"][col]], ax=ax, label="Train")
         sns.lineplot(
             x=epochs, y=hist["val_" + settings["metrics"][col]], ax=ax, label="Test"
@@ -224,22 +230,16 @@ def plot_accuracy(df, vehicle, sample_size, scores, settings):
     fig, axn = plt.subplots(
         len(settings["model_architectures"]),
         1,
-        figsize=(10, 10),
+        figsize=(5, 10),
         constrained_layout=True,
     )
     fig.suptitle(
         "Experiment: {0}\nSample Size: {1}\n# of Epochs: {2}".format(
             vehicle, sample_size, settings["n_epochs"]
-        )
+        ),
+        fontsize=18,
     )
     for index, ax in enumerate(axn.flat):
-        ax.set_title(
-            "Architecture: {0}\nTrain Score: {1} | Test Score: {2}".format(
-                settings["model_architectures"][index],
-                np.round(scores[index]["train"], 3),
-                np.round(scores[index]["test"], 3),
-            )
-        )
         predicted_temp = "{0}_({1},{2})".format(
             settings["predicted"],
             settings["model_architectures"][index][0],
@@ -260,6 +260,13 @@ def plot_accuracy(df, vehicle, sample_size, scores, settings):
         )
         ax.set_xlim(0)
         ax.set_ylim(0)
+        ax.set_title(
+            "Architecture: {0}\nTrain Score: {1} | Test Score: {2}".format(
+                settings["model_architectures"][index],
+                np.round(scores[index]["train"], 3),
+                np.round(scores[index]["test"], 3),
+            )
+        )
     fig.savefig(
         "../Modeling Outputs/{0}/{1} - {2}/{3} - Observed vs. Predicted.jpg".format(
             settings["output_type"],
@@ -289,7 +296,7 @@ def save_back_to_Excel(df, vehicle, settings):
 
 #%% [markdown]
 # ### General settings
-plt.style.use("classic")
+plt.style.use("bmh")
 pd.options.mode.chained_assignment = None
 EXPERIMENTS = [
     "009 Renault Logan 2014 (1.6L Manual)",
@@ -317,7 +324,7 @@ EXPERIMENTS = [
     "031 Mazda 3 2016 (2.0L Auto)",
     "032 Toyota RAV4 2016 (2.5L Auto)",
 ]
-EXPERIMENTS = ["011 JAC S5 2017 (2.0L TC Auto)"]
+EXPERIMENTS = ["010 JAC J5 2015 (1.8L Auto)"]
 
 #%% [markdown]
 # ### ANN settings
@@ -325,11 +332,11 @@ SETTINGS = {
     "dependent": "FCR_LH",
     "predicted": "FCR_LH_PRED",
     "features": ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG"],
-    "lagged_features": ["NO_OUTLIER_GRADE_DEG"],
+    "lagged_features": ["SPD_KH", "NO_OUTLIER_GRADE_DEG"],
     "lag_order": 0,
     "max_sample_size": 5400,
     "test_split_ratio": 0.20,
-    "n_epochs": 40,
+    "n_epochs": 100,
     "drop_prop": 0.1,
     "labels": {
         "FCR_LH": "Observed Fuel Consumption Rate (L/H)",
@@ -341,7 +348,7 @@ SETTINGS = {
         "NO_OUTLIER_GRADE_DEG": "Road Grade (Deg)",
     },
     "model_structure": "FCR ~ SPD + ACC + GRADE",
-    "model_architectures": [(1, 128), (2, 64)],
+    "model_architectures": [(1, 128), (2, 64), (4, 32), (8, 16), (16, 8)],
     "learning_rate": 0.001,
     "metrics": [
         "mean_squared_error",
@@ -372,5 +379,6 @@ for vehicle in EXPERIMENTS:
     plot_accuracy(df, vehicle, sample_size, scores, SETTINGS)
     # Save the predicted field back to Excel file
     save_back_to_Excel(df, vehicle, SETTINGS)
+
 
 #%%
