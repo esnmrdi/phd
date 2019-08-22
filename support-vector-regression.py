@@ -134,7 +134,7 @@ def plot_grid_search_results(vehicle, sample_size, best_score, cv_results, setti
     results["C"] = cv_results["param_C"]
     results["score"] = cv_results["mean_test_score"]
     results.sort_values(["epsilon", "gamma", "C"], ascending=True, inplace=True)
-    fig, axn = plt.subplots(1, len(settings["param_grid"]["epsilon"]), figsize=(20, 5))
+    fig, axn = plt.subplots(1, len(settings["param_grid"]["epsilon"]), figsize=(20, 5), constrained_layout=True)
     fig.suptitle(
         "Experiment: {0}\nSample Size: {1}\nFive-Fold CV Score: {2}".format(
             vehicle, sample_size, np.round(best_score, 3)
@@ -159,7 +159,6 @@ def plot_grid_search_results(vehicle, sample_size, best_score, cv_results, setti
             cbar_kws={"orientation": "horizontal"},
         )
         ax.set_title("epsilon = {}".format(np.round(epsilon, 5)))
-    plt.tight_layout()
     plt.show()
     fig.savefig(
         "../Modeling Outputs/{0}/{1} - {2}/{3} - Grid Search Result.jpg".format(
@@ -177,7 +176,7 @@ def plot_grid_search_results(vehicle, sample_size, best_score, cv_results, setti
 #%% [markdown]
 # ### Plot predictions vs. ground-truth and save plot to file
 def plot_accuracy(df, vehicle, sample_size, best_score, settings):
-    fig, ax = plt.subplots(1, 1)
+    fig, ax = plt.subplots(1, 1, figsize=(10, 10), constrained_layout=True)
     ax = sns.regplot(
         x=settings["dependent"],
         y=settings["predicted"],
@@ -195,7 +194,6 @@ def plot_accuracy(df, vehicle, sample_size, best_score, settings):
             vehicle, sample_size, np.round(best_score, 3)
         )
     )
-    plt.tight_layout()
     plt.show()
     fig.savefig(
         "../Modeling Outputs/{0}/{1} - {2}/{3} - Observed vs. Predicted.jpg".format(

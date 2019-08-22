@@ -172,7 +172,7 @@ def tune_ann(df, total_features, scaler, settings):
 # ### Plot training history and save plot to file
 def plot_training_results(vehicle, sample_size, scores, histories, settings):
     fig, axn = plt.subplots(
-        len(settings["model_architectures"]), len(settings["metrics"]), figsize=(40, 10)
+        len(settings["model_architectures"]), len(settings["metrics"]), figsize=(30, 10), constrained_layout=True
     )
     for ax, metric in zip(axn[0], settings["metrics"]):
         ax.set_title(metric)
@@ -202,7 +202,6 @@ def plot_training_results(vehicle, sample_size, scores, histories, settings):
             ),
         )
         ax.legend(loc="best")
-    plt.tight_layout()
     plt.show()
     fig.savefig(
         "../Modeling Outputs/{0}/{1} - {2}/{3} - Training Result.jpg".format(
@@ -220,7 +219,7 @@ def plot_training_results(vehicle, sample_size, scores, histories, settings):
 #%% [markdown]
 # ### Plot predictions vs. ground-truth and save plot to file
 def plot_accuracy(df, vehicle, sample_size, scores, settings):
-    fig, axn = plt.subplots(len(settings["model_architectures"]), 1)
+    fig, axn = plt.subplots(len(settings["model_architectures"]), 1, figsize=(10,10), constrained_layout=True)
     fig.suptitle(
         "Experiment: {0}\nSample Size: {1}\n# of Epochs: {2}".format(
             vehicle, sample_size, settings["n_epochs"]
@@ -253,7 +252,6 @@ def plot_accuracy(df, vehicle, sample_size, scores, settings):
         )
         ax.set_xlim(0)
         ax.set_ylim(0)
-    plt.tight_layout()
     plt.show()
     fig.savefig(
         "../Modeling Outputs/{0}/{1} - {2}/{3} - Observed vs. Predicted.jpg".format(
@@ -317,8 +315,8 @@ EXPERIMENTS = ["011 JAC S5 2017 (2.0L TC Auto)"]
 #%% [markdown]
 # ### ANN settings
 SETTINGS = {
-    "dependent": "RPM",
-    "predicted": "RPM_PRED",
+    "dependent": "FCR_LH",
+    "predicted": "FCR_LH_PRED",
     "features": ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG"],
     "lagged_features": ["NO_OUTLIER_GRADE_DEG"],
     "lag_order": 0,
@@ -335,7 +333,7 @@ SETTINGS = {
         "ACC_MS2": "Acceleration (m/s2)",
         "NO_OUTLIER_GRADE_DEG": "Road Grade (Deg)",
     },
-    "model_structure": "RPM ~ SPD + ACC + GRADE",
+    "model_structure": "FCR ~ SPD + ACC + GRADE",
     "model_architectures": [(1, 128), (2, 64)],
     "learning_rate": 0.001,
     "metrics": [
@@ -347,7 +345,7 @@ SETTINGS = {
     "input_type": "NONE",
     "output_type": "ANN",
     "input_index": "01",
-    "output_index": "04",
+    "output_index": "02",
 }
 
 #%% [markdown]
