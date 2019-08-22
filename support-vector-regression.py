@@ -134,7 +134,12 @@ def plot_grid_search_results(vehicle, sample_size, best_score, cv_results, setti
     results["C"] = cv_results["param_C"]
     results["score"] = cv_results["mean_test_score"]
     results.sort_values(["epsilon", "gamma", "C"], ascending=True, inplace=True)
-    fig, axn = plt.subplots(1, len(settings["param_grid"]["epsilon"]), figsize=(20, 5), constrained_layout=True)
+    fig, axn = plt.subplots(
+        1,
+        len(settings["param_grid"]["epsilon"]),
+        figsize=(20, 5),
+        constrained_layout=True,
+    )
     fig.suptitle(
         "Experiment: {0}\nSample Size: {1}\nFive-Fold CV Score: {2}".format(
             vehicle, sample_size, np.round(best_score, 3)
@@ -159,7 +164,6 @@ def plot_grid_search_results(vehicle, sample_size, best_score, cv_results, setti
             cbar_kws={"orientation": "horizontal"},
         )
         ax.set_title("epsilon = {}".format(np.round(epsilon, 5)))
-    plt.show()
     fig.savefig(
         "../Modeling Outputs/{0}/{1} - {2}/{3} - Grid Search Result.jpg".format(
             settings["output_type"],
@@ -182,6 +186,7 @@ def plot_accuracy(df, vehicle, sample_size, best_score, settings):
         y=settings["predicted"],
         data=df,
         fit_reg=True,
+        ax=ax,
         scatter_kws={"color": "blue"},
         line_kws={"color": "red"},
     )
@@ -194,7 +199,6 @@ def plot_accuracy(df, vehicle, sample_size, best_score, settings):
             vehicle, sample_size, np.round(best_score, 3)
         )
     )
-    plt.show()
     fig.savefig(
         "../Modeling Outputs/{0}/{1} - {2}/{3} - Observed vs. Predicted.jpg".format(
             settings["output_type"],
@@ -294,7 +298,9 @@ for vehicle in EXPERIMENTS:
     # Scale the features
     df, scaler = scale(df, total_features, SETTINGS)
     # Tune the SVR model using grid search and cross validation
-    df, best_score, best_estimator, cv_results = tune_svr(df, total_features, scaler, SETTINGS)
+    df, best_score, best_estimator, cv_results = tune_svr(
+        df, total_features, scaler, SETTINGS
+    )
     # Plot the grid search results and save plots to file
     plot_grid_search_results(vehicle, sample_size, best_score, cv_results, SETTINGS)
     # Plot predictions vs. ground-truth and save plot to file
