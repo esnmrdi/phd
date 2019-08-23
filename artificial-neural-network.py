@@ -198,9 +198,9 @@ def plot_training_results(vehicle, sample_size, scores, histories, settings):
         history = histories[row]
         hist = pd.DataFrame(history.history)
         epochs = history.epoch
-        sns.lineplot(x=epochs, y=hist[settings["metrics"][col]], ax=ax, label="Train")
+        sns.lineplot(x=epochs, y=settings["metrics"][col], data=hist, ax=ax, label="Train")
         sns.lineplot(
-            x=epochs, y=hist["val_" + settings["metrics"][col]], ax=ax, label="Test"
+            x=epochs, y="val_" + settings["metrics"][col], data=hist, ax=ax, label="Test"
         )
         ax.set(
             xlabel="# of Epochs",
@@ -211,6 +211,7 @@ def plot_training_results(vehicle, sample_size, scores, histories, settings):
             ),
         )
         ax.legend(loc="best")
+    plt.show()
     fig.savefig(
         "../Modeling Outputs/{0}/{1} - {2}/{3} - Training Result.jpg".format(
             settings["output_type"],
@@ -267,6 +268,7 @@ def plot_accuracy(df, vehicle, sample_size, scores, settings):
                 np.round(scores[index]["test"], 3),
             )
         )
+    plt.show()
     fig.savefig(
         "../Modeling Outputs/{0}/{1} - {2}/{3} - Observed vs. Predicted.jpg".format(
             settings["output_type"],
@@ -324,7 +326,6 @@ EXPERIMENTS = [
     "031 Mazda 3 2016 (2.0L Auto)",
     "032 Toyota RAV4 2016 (2.5L Auto)",
 ]
-EXPERIMENTS = ["010 JAC J5 2015 (1.8L Auto)"]
 
 #%% [markdown]
 # ### ANN settings
