@@ -171,6 +171,7 @@ def plot_grid_search_results(vehicle, sample_size, best_score, cv_results, setti
             cbar_kws={"orientation": "horizontal"},
         )
         ax.set_title("epsilon = {}".format(np.round(epsilon, 5)))
+    plt.show()
     fig.savefig(
         "../Modeling Outputs/{0}/{1} - {2}/{3} - Grid Search Result.jpg".format(
             settings["output_type"],
@@ -208,6 +209,7 @@ def plot_accuracy(df, vehicle, sample_size, best_score, settings):
             vehicle, sample_size, np.round(best_score, 3)
         )
     )
+    plt.show()
     fig.savefig(
         "../Modeling Outputs/{0}/{1} - {2}/{3} - Observed vs. Predicted.jpg".format(
             settings["output_type"],
@@ -265,7 +267,6 @@ EXPERIMENTS = [
     "031 Mazda 3 2016 (2.0L Auto)",
     "032 Toyota RAV4 2016 (2.5L Auto)",
 ]
-EXPERIMENTS = ["010 JAC J5 2015 (1.8L Auto)"]
 
 #%% [markdown]
 # ### SVR settings
