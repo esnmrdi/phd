@@ -181,7 +181,7 @@ def plot_training_results(vehicle, sample_size, scores, histories, settings):
     fig, axn = plt.subplots(
         len(settings["model_architectures"]),
         len(settings["metrics"]),
-        figsize=(30, 10),
+        figsize=(30, 5 * len(settings["model_architectures"])),
         constrained_layout=True,
     )
     for ax, metric in zip(axn[0], settings["metrics"]):
@@ -230,7 +230,7 @@ def plot_accuracy(df, vehicle, sample_size, scores, settings):
     fig, axn = plt.subplots(
         len(settings["model_architectures"]),
         1,
-        figsize=(5, 10),
+        figsize=(5, 5 * len(settings["model_architectures"])),
         constrained_layout=True,
     )
     fig.suptitle(
