@@ -131,7 +131,7 @@ def save_back_to_Excel(df, vehicle, trip, index, settings):
 def plot_raw_altitude(df, vehicle, trip, settings):
     fig, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
     fig.suptitle(vehicle[4:] + " on " + trip[:10] + " @ " + trip[11:], fontsize=18)
-    ax = sns.lineplot(x="DIST_KM", y="ALT_M", data=df, ax=ax)
+    ax = sns.lineplot(x="DIST_KM", y="ALT_M", data=df, ax=ax, ci=None)
     ax.set(xlabel="Distance (km)", ylabel="Altitude (m)")
     plt.show()
     fig.savefig(
@@ -151,8 +151,8 @@ def plot_raw_altitude(df, vehicle, trip, settings):
 def plot_savitzky_golay_output(df, vehicle, trip, settings):
     fig, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
     fig.suptitle(vehicle[4:] + " on " + trip[:10] + " @ " + trip[11:], fontsize=18)
-    ax = sns.lineplot(x="DIST_KM", y="ALT_M", data=df, ax=ax, label="RAW")
-    ax = sns.lineplot(x="DIST_KM", y="SG_ALT_M", data=df, ax=ax, label="Savitsky-Golay")
+    ax = sns.lineplot(x="DIST_KM", y="ALT_M", data=df, ax=ax, label="RAW", ci=None)
+    ax = sns.lineplot(x="DIST_KM", y="SG_ALT_M", data=df, ax=ax, label="Savitsky-Golay", ci=None)
     ax.set(xlabel="Distance (km)", ylabel="Altitude (m)")
     ax.legend(loc="best")
     plt.show()
@@ -174,10 +174,10 @@ def plot_grade_estimates(df, vehicle, trip, settings):
     fig, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
     fig.suptitle(vehicle[4:] + " on " + trip[:10] + " @ " + trip[11:], fontsize=18)
     ax = sns.lineplot(
-        x="DIST_KM", y="CALC_GRADE_DEG", data=df, ax=ax, label="Calc. Grade"
+        x="DIST_KM", y="CALC_GRADE_DEG", data=df, ax=ax, label="Calc. Grade", ci=None
     )
     ax = sns.lineplot(
-        x="DIST_KM", y="NO_OUTLIER_GRADE_DEG", data=df, ax=ax, label="No-Outlier Grade"
+        x="DIST_KM", y="NO_OUTLIER_GRADE_DEG", data=df, ax=ax, label="No-Outlier Grade", ci=None
     )
     ax.set(xlabel="Distance (km)", ylabel="Grade Estimate (deg)")
     plt.show()
@@ -256,6 +256,5 @@ for vehicle in EXPERIMENTS:
         plot_grade_estimates(df, vehicle, trip, SETTINGS)
         # Save dataframe to a new Excel file
         save_back_to_Excel(df, vehicle, trip, index, SETTINGS)
-
 
 #%%
