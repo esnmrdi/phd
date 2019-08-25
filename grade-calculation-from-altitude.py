@@ -115,14 +115,8 @@ def save_back_to_Excel(df, vehicle, trip, index, settings):
     output_path = directory + output_file
     write_mode = "w" if index == 0 else "a"
     with pd.ExcelWriter(output_path, engine="openpyxl", mode=write_mode) as writer:
-        df.to_excel(
-            writer, sheet_name=trip, header=True, index=None
-        )
-    print(
-        "{0} - {1} saved to Excel successfully!".format(
-            vehicle, trip
-        )
-    )
+        df.to_excel(writer, sheet_name=trip, header=True, index=None)
+    print("{0} - {1} saved to Excel successfully!".format(vehicle, trip))
     return None
 
 
@@ -130,14 +124,14 @@ def save_back_to_Excel(df, vehicle, trip, index, settings):
 # ### Plotting the RAW altitude
 def plot_raw_altitude(df, vehicle, trip, settings):
     fig, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
-    fig.suptitle(vehicle[4:] + " on " + trip[:10] + " @ " + trip[11:], fontsize=18)
+    title = vehicle + " on " + trip[:10] + " @ " + trip[11:]
+    fig.suptitle(title, fontsize=18)
     ax = sns.lineplot(x="DIST_KM", y="ALT_M", data=df, ax=ax, ci=None)
     ax.set(xlabel="Distance (km)", ylabel="Altitude (m)")
     plt.show()
     fig.savefig(
         "../Modeling Outputs/{0}/{1} - RAW Altitude.jpg".format(
-            settings["input_type"],
-            vehicle,
+            settings["input_type"], title
         ),
         dpi=300,
         quality=95,
@@ -150,16 +144,18 @@ def plot_raw_altitude(df, vehicle, trip, settings):
 # ### Plotting the RAW altitude vs. Savitzky-Golay algorithm outputs
 def plot_savitzky_golay_output(df, vehicle, trip, settings):
     fig, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
-    fig.suptitle(vehicle[4:] + " on " + trip[:10] + " @ " + trip[11:], fontsize=18)
+    title = vehicle + " on " + trip[:10] + " @ " + trip[11:]
+    fig.suptitle(title, fontsize=18)
     ax = sns.lineplot(x="DIST_KM", y="ALT_M", data=df, ax=ax, label="RAW", ci=None)
-    ax = sns.lineplot(x="DIST_KM", y="SG_ALT_M", data=df, ax=ax, label="Savitsky-Golay", ci=None)
+    ax = sns.lineplot(
+        x="DIST_KM", y="SG_ALT_M", data=df, ax=ax, label="Savitsky-Golay", ci=None
+    )
     ax.set(xlabel="Distance (km)", ylabel="Altitude (m)")
     ax.legend(loc="best")
     plt.show()
     fig.savefig(
         "../Modeling Outputs/{0}/{1} - Savitzky-Golay Output.jpg".format(
-            settings["input_type"],
-            vehicle,
+            settings["input_type"], title
         ),
         dpi=300,
         quality=95,
@@ -172,19 +168,24 @@ def plot_savitzky_golay_output(df, vehicle, trip, settings):
 # ### Plotting the calculated grade
 def plot_grade_estimates(df, vehicle, trip, settings):
     fig, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
-    fig.suptitle(vehicle[4:] + " on " + trip[:10] + " @ " + trip[11:], fontsize=18)
+    title = vehicle + " on " + trip[:10] + " @ " + trip[11:]
+    fig.suptitle(title, fontsize=18)
     ax = sns.lineplot(
         x="DIST_KM", y="CALC_GRADE_DEG", data=df, ax=ax, label="Calc. Grade", ci=None
     )
     ax = sns.lineplot(
-        x="DIST_KM", y="NO_OUTLIER_GRADE_DEG", data=df, ax=ax, label="No-Outlier Grade", ci=None
+        x="DIST_KM",
+        y="NO_OUTLIER_GRADE_DEG",
+        data=df,
+        ax=ax,
+        label="No-Outlier Grade",
+        ci=None,
     )
     ax.set(xlabel="Distance (km)", ylabel="Grade Estimate (deg)")
     plt.show()
     fig.savefig(
         "../Modeling Outputs/{0}/{1} - Estimated Grade.jpg".format(
-            settings["input_type"],
-            vehicle,
+            settings["input_type"], title
         ),
         dpi=300,
         quality=95,
