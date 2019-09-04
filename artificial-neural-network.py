@@ -198,9 +198,9 @@ def plot_training_results(vehicle, sample_size, scores, histories, settings):
         history = histories[row]
         hist = pd.DataFrame(history.history)
         epochs = history.epoch
-        sns.lineplot(x=epochs, y=settings["metrics"][col], data=hist, ax=ax, label="Train")
+        sns.lineplot(x=epochs, y=settings["metrics"][col], data=hist, ax=ax, label="Train", ci=None)
         sns.lineplot(
-            x=epochs, y="val_" + settings["metrics"][col], data=hist, ax=ax, label="Test"
+            x=epochs, y="val_" + settings["metrics"][col], data=hist, ax=ax, label="Test", ci=None
         )
         ax.set(
             xlabel="# of Epochs",
@@ -254,6 +254,7 @@ def plot_accuracy(df, vehicle, sample_size, scores, settings):
             ax=ax,
             scatter_kws={"color": "blue"},
             line_kws={"color": "red"},
+            ci=None,
         )
         ax.set(
             xlabel=settings["labels"][settings["dependent"]],
@@ -333,24 +334,23 @@ EXPERIMENTS = [
 SETTINGS = {
     "dependent": "FCR_LH",
     "predicted": "FCR_LH_PRED",
-    "features": ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG"],
+    "features": ["SPD_KH", "NO_OUTLIER_GRADE_DEG"],
     "lagged_features": ["SPD_KH", "NO_OUTLIER_GRADE_DEG"],
     "lag_order": 0,
     "max_sample_size": 5400,
     "test_split_ratio": 0.20,
-    "n_epochs": 100,
+    "n_epochs": 200,
     "drop_prop": 0.1,
     "labels": {
         "FCR_LH": "Observed Fuel Consumption Rate (L/H)",
         "FCR_LH_PRED": "Predicted Fuel Consumption Rate (L/H)",
         "RPM": "Engine Speed (rev/min)",
-        "RPM_PRED": "Predicted Engine Speed (rev/min)",
         "SPD_KH": "Speed (Km/h)",
         "ACC_MS2": "Acceleration (m/s2)",
         "NO_OUTLIER_GRADE_DEG": "Road Grade (Deg)",
     },
-    "model_structure": "FCR ~ SPD + ACC + GRADE",
-    "model_architectures": [(1, 128), (2, 64), (4, 32), (8, 16), (16, 8)],
+    "model_structure": "FCR ~ SPD + GRADE",
+    "model_architectures": [(1, 128), (2, 64), (4, 32), (8, 16)],
     "learning_rate": 0.001,
     "metrics": [
         "mean_squared_error",
@@ -361,7 +361,7 @@ SETTINGS = {
     "input_type": "NONE",
     "output_type": "ANN",
     "input_index": "01",
-    "output_index": "02",
+    "output_index": "03",
 }
 
 #%% [markdown]
