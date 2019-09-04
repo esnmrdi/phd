@@ -188,7 +188,7 @@ def plot_grid_search_results(vehicle, sample_size, best_score, cv_results, setti
 #%% [markdown]
 # ### Plot predictions vs. ground-truth and save plot to file
 def plot_accuracy(df, vehicle, sample_size, best_score, settings):
-    fig, ax = plt.subplots(1, 1, figsize=(5, 5), constrained_layout=True)
+    fig, ax = plt.subplots(1, 1, figsize=(6, 6), constrained_layout=True)
     ax = sns.regplot(
         x=settings["dependent"],
         y=settings["predicted"],
@@ -197,6 +197,7 @@ def plot_accuracy(df, vehicle, sample_size, best_score, settings):
         ax=ax,
         scatter_kws={"color": "blue"},
         line_kws={"color": "red"},
+        ci=None,
     )
     ax.set(
         xlabel=settings["labels"][settings["dependent"]],
@@ -266,7 +267,7 @@ EXPERIMENTS = [
     "030 Ford Focus 2012 (2.0L Auto)",
     "031 Mazda 3 2016 (2.0L Auto)",
     "032 Toyota RAV4 2016 (2.5L Auto)",
-    "033 Toyota Corolla 2019 (1.8L Auto)"
+    "033 Toyota Corolla 2019 (1.8L Auto)",
 ]
 
 #%% [markdown]
@@ -274,9 +275,9 @@ EXPERIMENTS = [
 SETTINGS = {
     "dependent": "FCR_LH",
     "predicted": "FCR_LH_PRED",
-    "features": ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG"],
+    "features": ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG", "RPM"],
     "lagged_features": ["SPD_KH", "NO_OUTLIER_GRADE_DEG"],
-    "lag_order": 0,
+    "lag_order": 1,
     "max_sample_size": 5400,
     "n_splits": 5,
     "param_grid": {
@@ -288,16 +289,15 @@ SETTINGS = {
         "FCR_LH": "Observed Fuel Consumption Rate (L/H)",
         "FCR_LH_PRED": "Predicted Fuel Consumption Rate (L/H)",
         "RPM": "Observed Engine Speed (rev/min)",
-        "RPM_PRED": "Predicted Engine Speed (rev/min)",
         "SPD_KH": "Speed (Km/h)",
         "ACC_MS2": "Acceleration (m/s2)",
         "NO_OUTLIER_GRADE_DEG": "Road Grade (Deg)",
     },
-    "model_structure": "FCR ~ SPD + ACC + GRADE",
+    "model_structure": "FCR ~ SPD + SPD_L1 + ACC + GRADE + GRADE_L1 + RPM",
     "input_type": "NONE",
     "output_type": "SVR",
     "input_index": "01",
-    "output_index": "02",
+    "output_index": "15",
 }
 
 #%% [markdown]
@@ -319,6 +319,5 @@ for vehicle in EXPERIMENTS:
     plot_accuracy(df, vehicle, sample_size, best_score, SETTINGS)
     # Save the predicted field back to Excel file
     save_back_to_Excel(df, vehicle, SETTINGS)
-
 
 #%%
