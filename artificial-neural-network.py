@@ -326,7 +326,9 @@ EXPERIMENTS = [
     "030 Ford Focus 2012 (2.0L Auto)",
     "031 Mazda 3 2016 (2.0L Auto)",
     "032 Toyota RAV4 2016 (2.5L Auto)",
-    "033 Toyota Corolla 2019 (1.8L Auto)"
+    "033 Toyota Corolla 2019 (1.8L Auto)",
+    "034 Toyota Yaris 2015 (1.5L Auto)",
+    "035 Kia Rio 2013 (1.6L Auto)",
 ]
 
 #%% [markdown]
@@ -334,9 +336,9 @@ EXPERIMENTS = [
 SETTINGS = {
     "dependent": "FCR_LH",
     "predicted": "FCR_LH_PRED",
-    "features": ["SPD_KH", "NO_OUTLIER_GRADE_DEG"],
+    "features": ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG", "RPM"],
     "lagged_features": ["SPD_KH", "NO_OUTLIER_GRADE_DEG"],
-    "lag_order": 0,
+    "lag_order": 1,
     "max_sample_size": 5400,
     "test_split_ratio": 0.20,
     "n_epochs": 200,
@@ -349,7 +351,7 @@ SETTINGS = {
         "ACC_MS2": "Acceleration (m/s2)",
         "NO_OUTLIER_GRADE_DEG": "Road Grade (Deg)",
     },
-    "model_structure": "FCR ~ SPD + GRADE",
+    "model_structure": "FCR ~ SPD + SPD_L1 + ACC + GRADE + GRADE_L1 + RPM",
     "model_architectures": [(1, 128), (2, 64), (4, 32), (8, 16)],
     "learning_rate": 0.001,
     "metrics": [
@@ -361,7 +363,7 @@ SETTINGS = {
     "input_type": "NONE",
     "output_type": "ANN",
     "input_index": "01",
-    "output_index": "03",
+    "output_index": "15",
 }
 
 #%% [markdown]

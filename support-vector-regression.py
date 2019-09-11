@@ -268,6 +268,8 @@ EXPERIMENTS = [
     "031 Mazda 3 2016 (2.0L Auto)",
     "032 Toyota RAV4 2016 (2.5L Auto)",
     "033 Toyota Corolla 2019 (1.8L Auto)",
+    "034 Toyota Yaris 2015 (1.5L Auto)",
+    "035 Kia Rio 2013 (1.6L Auto)",
 ]
 
 #%% [markdown]
