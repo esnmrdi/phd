@@ -272,12 +272,13 @@ EXPERIMENTS = [
     "035 Kia Rio 2013 (1.6L Auto)",
 ]
 
+
 #%% [markdown]
 # ### SVR settings
 SETTINGS = {
-    "dependent": "FCR_LH",
-    "predicted": "FCR_LH_PRED",
-    "features": ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG", "RPM"],
+    "dependent": "RPM",
+    "predicted": "RPM_PRED",
+    "features": ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG"],
     "lagged_features": ["SPD_KH", "NO_OUTLIER_GRADE_DEG"],
     "lag_order": 1,
     "max_sample_size": 5400,
@@ -291,15 +292,16 @@ SETTINGS = {
         "FCR_LH": "Observed Fuel Consumption Rate (L/H)",
         "FCR_LH_PRED": "Predicted Fuel Consumption Rate (L/H)",
         "RPM": "Observed Engine Speed (rev/min)",
+        "RPM_PRED": "Predicted Engine Speed (rev/min)",
         "SPD_KH": "Speed (Km/h)",
         "ACC_MS2": "Acceleration (m/s2)",
         "NO_OUTLIER_GRADE_DEG": "Road Grade (Deg)",
     },
-    "model_structure": "FCR ~ SPD + SPD_L1 + ACC + GRADE + GRADE_L1 + RPM",
+    "model_structure": "RPM ~ SPD + SPD_L1 + ACC + GRADE + GRADE_L1",
     "input_type": "NONE",
     "output_type": "SVR",
     "input_index": "01",
-    "output_index": "15",
+    "output_index": "17",
 }
 
 #%% [markdown]

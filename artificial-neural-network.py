@@ -336,8 +336,8 @@ EXPERIMENTS = [
 SETTINGS = {
     "dependent": "FCR_LH",
     "predicted": "FCR_LH_PRED",
-    "features": ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG", "RPM"],
-    "lagged_features": ["SPD_KH", "NO_OUTLIER_GRADE_DEG"],
+    "features": ["SPD_KH", "ACC_MS2", "RPM"],
+    "lagged_features": ["SPD_KH"],
     "lag_order": 1,
     "max_sample_size": 5400,
     "test_split_ratio": 0.20,
@@ -346,12 +346,13 @@ SETTINGS = {
     "labels": {
         "FCR_LH": "Observed Fuel Consumption Rate (L/H)",
         "FCR_LH_PRED": "Predicted Fuel Consumption Rate (L/H)",
-        "RPM": "Engine Speed (rev/min)",
+        "RPM": "Observed Engine Speed (rev/min)",
+        "RPM_PRED": "Predicted Engine Speed (rev/min)",
         "SPD_KH": "Speed (Km/h)",
         "ACC_MS2": "Acceleration (m/s2)",
         "NO_OUTLIER_GRADE_DEG": "Road Grade (Deg)",
     },
-    "model_structure": "FCR ~ SPD + SPD_L1 + ACC + GRADE + GRADE_L1 + RPM",
+    "model_structure": "FCR ~ SPD + SPD_L1 + ACC + RPM",
     "model_architectures": [(1, 128), (2, 64), (4, 32), (8, 16)],
     "learning_rate": 0.001,
     "metrics": [
@@ -363,7 +364,7 @@ SETTINGS = {
     "input_type": "NONE",
     "output_type": "ANN",
     "input_index": "01",
-    "output_index": "15",
+    "output_index": "13",
 }
 
 #%% [markdown]
