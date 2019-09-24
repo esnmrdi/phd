@@ -198,9 +198,21 @@ def plot_training_results(vehicle, sample_size, scores, histories, settings):
         history = histories[row]
         hist = pd.DataFrame(history.history)
         epochs = history.epoch
-        sns.lineplot(x=epochs, y=settings["metrics"][col], data=hist, ax=ax, label="Train", ci=None)
         sns.lineplot(
-            x=epochs, y="val_" + settings["metrics"][col], data=hist, ax=ax, label="Test", ci=None
+            x=epochs,
+            y=settings["metrics"][col],
+            data=hist,
+            ax=ax,
+            label="Train",
+            ci=None,
+        )
+        sns.lineplot(
+            x=epochs,
+            y="val_" + settings["metrics"][col],
+            data=hist,
+            ax=ax,
+            label="Test",
+            ci=None,
         )
         ax.set(
             xlabel="# of Epochs",
