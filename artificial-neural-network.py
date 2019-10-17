@@ -62,9 +62,15 @@ def load_sample_from_Excel(vehicle, settings):
 
 #%% [markdown]
 # ### Add lagged features to the dataframe
-def add_lagged_features(df, settings):
+def add_lagged_features(df, settings, index):
     df_temp = df.copy()
     total_features = settings["features"]
+    total_features = [
+        "RPM_PRED_" + settings["RPM_BEST_ARCHS"][index]
+        if feature == "RPM_PRED"
+        else feature
+        for feature in settings["features"]
+    ]
     for feature in settings["lagged_features"]:
         for i in range(settings["lag_order"]):
             new_feature = feature + "_L" + str(i + 1)
@@ -348,8 +354,8 @@ EXPERIMENTS = [
 SETTINGS = {
     "dependent": "FCR_LH",
     "predicted": "FCR_LH_PRED",
-    "features": ["SPD_KH", "ACC_MS2", "RPM"],
-    "lagged_features": ["SPD_KH"],
+    "features": ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG", "RPM_PRED"],
+    "lagged_features": ["SPD_KH", "NO_OUTLIER_GRADE_DEG"],
     "lag_order": 1,
     "max_sample_size": 5400,
     "test_split_ratio": 0.20,
@@ -364,7 +370,7 @@ SETTINGS = {
         "ACC_MS2": "Acceleration (m/s2)",
         "NO_OUTLIER_GRADE_DEG": "Road Grade (Deg)",
     },
-    "model_structure": "FCR ~ SPD + SPD_L1 + ACC + RPM",
+    "model_structure": "FCR ~ SPD + SPD_L1 + ACC + GRADE + GRADE_L1 + RPM_PRED",
     "model_architectures": [(1, 128), (2, 64), (4, 32), (8, 16)],
     "learning_rate": 0.001,
     "metrics": [
@@ -373,19 +379,48 @@ SETTINGS = {
         "mean_absolute_percentage_error",
         "cosine_proximity",
     ],
-    "input_type": "NONE",
+    "input_type": "ANN",
     "output_type": "ANN",
-    "input_index": "01",
-    "output_index": "13",
+    "input_index": "17",
+    "output_index": "19",
+    "RPM_BEST_ARCHS": [
+        "(1,128)",
+        "(2,64)",
+        "(2,64)",
+        "(2,64)",
+        "(1,128)",
+        "(2,64)",
+        "(2,64)",
+        "(1,128)",
+        "(2,64)",
+        "(4,32)",
+        "(2,64)",
+        "(2,64)",
+        "(1,128)",
+        "(1,128)",
+        "(1,128)",
+        "(4,32)",
+        "(2,64)",
+        "(1,128)",
+        "(2,64)",
+        "(1,128)",
+        "(1,128)",
+        "(2,64)",
+        "(2,64)",
+        "(2,64)",
+        "(1,128)",
+        "(1,128)",
+        "(1,128)",
+    ],
 }
 
 #%% [markdown]
 # ### Batch execution on all vehicles and their trips
-for vehicle in EXPERIMENTS:
+for index, vehicle in enumerate(EXPERIMENTS):
     # Add lagged features to the dataframe and sampling
     df, sample_size = load_sample_from_Excel(vehicle, SETTINGS)
     # Add lagged features to the dataframe
-    df, total_features = add_lagged_features(df, SETTINGS)
+    df, total_features = add_lagged_features(df, SETTINGS, index)
     # Scale the features
     df, scaler = scale(df, total_features, SETTINGS)
     # Tune the ANN model by testing alternative architectures (from shallow and wide to deep and narrow)
@@ -396,6 +431,3 @@ for vehicle in EXPERIMENTS:
     plot_accuracy(df, vehicle, sample_size, scores, SETTINGS)
     # Save the predicted field back to Excel file
     save_back_to_Excel(df, vehicle, SETTINGS)
-
-
-#%%
