@@ -104,7 +104,7 @@ def remove_outlier_grades(calculated_grade):
 
 
 #%% [markdown]
-# ### Saving the calculated field back in Excel file
+# ### Saving the calculated field back to Excel file
 def save_back_to_Excel(df, vehicle, trip, index, settings):
     df = df[1:]
     df = df.dropna()
