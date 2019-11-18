@@ -13,7 +13,7 @@ import seaborn as sns
 #%% [markdown]
 # ### Loading data from Excel to a pandas dataframe
 def load_from_Excel(vehicle, settings):
-    directory = "../Field Experiments/Veepeak/" + vehicle + "/Processed/"
+    directory = "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/" + vehicle + "/Processed/"
     input_file = vehicle + " - {0} - {1}.xlsx".format(
         settings["input_type"], settings["input_index"]
     )
@@ -108,7 +108,7 @@ def remove_outlier_grades(calculated_grade):
 def save_back_to_Excel(df, vehicle, trip, index, settings):
     df = df[1:]
     df = df.dropna()
-    directory = "../Field Experiments/Veepeak/" + vehicle + "/Processed/"
+    directory = "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/" + vehicle + "/Processed/"
     output_file = vehicle + " - {0} - {1}.xlsx".format(
         settings["output_type"], settings["output_index"]
     )
@@ -130,7 +130,7 @@ def plot_raw_altitude(df, vehicle, trip, settings):
     ax.set(xlabel="Distance (km)", ylabel="Altitude (m)")
     plt.show()
     fig.savefig(
-        "../Modeling Outputs/{0}/{1} - RAW Altitude.jpg".format(
+        "../../../Google Drive/Academia/PhD Thesis/Modeling Outputs/{0}/{1} - RAW Altitude.jpg".format(
             settings["input_type"], title
         ),
         dpi=300,
@@ -154,7 +154,7 @@ def plot_savitzky_golay_output(df, vehicle, trip, settings):
     ax.legend(loc="best")
     plt.show()
     fig.savefig(
-        "../Modeling Outputs/{0}/{1} - Savitzky-Golay Output.jpg".format(
+        "../../../Google Drive/Academia/PhD Thesis/Modeling Outputs/{0}/{1} - Savitzky-Golay Output.jpg".format(
             settings["input_type"], title
         ),
         dpi=300,
@@ -184,7 +184,7 @@ def plot_grade_estimates(df, vehicle, trip, settings):
     ax.set(xlabel="Distance (km)", ylabel="Grade Estimate (deg)")
     plt.show()
     fig.savefig(
-        "../Modeling Outputs/{0}/{1} - Estimated Grade.jpg".format(
+        "../../../Google Drive/Academia/PhD Thesis/Modeling Outputs/{0}/{1} - Estimated Grade.jpg".format(
             settings["input_type"], title
         ),
         dpi=300,
@@ -230,12 +230,10 @@ EXPERIMENTS = [
     "037 Chevrolet Malibu 2019 (1.5L TC Auto)",
     "038 Kia Optima 2012 (2.4L Auto)",
     "039 Honda Fit 2009 (1.5L Auto)",
+    "040 Mazda 6 2009 (2.5L Auto)",
 ]
 EXPERIMENTS = [
-    "036 Jeep Patriot 2010 (2.4L Auto)",
-    "037 Chevrolet Malibu 2019 (1.5L TC Auto)",
-    "038 Kia Optima 2012 (2.4L Auto)",
-    "039 Honda Fit 2009 (1.5L Auto)",
+    "040 Mazda 6 2009 (2.5L Auto)",
 ]
 
 #%% [markdown]
