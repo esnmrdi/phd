@@ -33,7 +33,7 @@ output_notebook()
 #%% [markdown]
 # ### Loading data from Excel to a pandas dataframe
 def load_from_Excel(vehicle, trip):
-    directory = "./Field Experiments/Veepeak/" + vehicle + "/Processed/"
+    directory = "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/" + vehicle + "/Processed/"
     input_file = vehicle + " + Grade.xlsx"
     input_path = directory + input_file
     df = pd.read_excel(input_path, sheet_name=EXPERIMENTS[vehicle][trip], header=0)
@@ -105,7 +105,7 @@ def plot_histogram(df, feature_name):
 #%% [markdown]
 # ### Saving the calculated field back in Excel file
 def save_back_to_Excel(df, vehicle, trip):
-    directory = "./Field Experiments/Veepeak/" + vehicle + "/Processed/"
+    directory = "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/" + vehicle + "/Processed/"
     output_file = vehicle + " + Grade + HMS.xlsx"
     output_path = directory + output_file
     write_mode = "w" if trip == 0 else "a"

@@ -16,7 +16,7 @@ from sklearn.metrics.pairwise import rbf_kernel, linear_kernel, polynomial_kerne
 #%% [markdown]
 # ### Load sample data from Excel to a pandas dataframe
 def load_sample_from_Excel(vehicle, settings):
-    directory = "../Field Experiments/Veepeak/" + vehicle + "/Processed/"
+    directory = "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/" + vehicle + "/Processed/"
     input_file = vehicle + " - {0} - {1}.xlsx".format(
         settings["input_type"], settings["input_index"]
     )
@@ -178,7 +178,7 @@ def plot_grid_search_results(vehicle, sample_size, best_score, cv_results, setti
         ax.set_title("epsilon = {}".format(np.round(epsilon, 5)))
     plt.show()
     fig.savefig(
-        "../Modeling Outputs/{0}/{1} - {2}/{3} - Grid Search Result.jpg".format(
+        "../../../Google Drive/Academia/PhD Thesis/Modeling Outputs/{0}/{1} - {2}/{3} - Grid Search Result.jpg".format(
             settings["output_type"],
             settings["output_index"],
             settings["model_structure"],
@@ -217,7 +217,7 @@ def plot_accuracy(df, vehicle, sample_size, best_score, settings):
     )
     plt.show()
     fig.savefig(
-        "../Modeling Outputs/{0}/{1} - {2}/{3} - Observed vs. Predicted.jpg".format(
+        "../../../Google Drive/Academia/PhD Thesis/Modeling Outputs/{0}/{1} - {2}/{3} - Observed vs. Predicted.jpg".format(
             settings["output_type"],
             settings["output_index"],
             settings["model_structure"],
@@ -232,7 +232,7 @@ def plot_accuracy(df, vehicle, sample_size, best_score, settings):
 #%% [markdown]
 # ### Save the predicted field back to Excel file
 def save_back_to_Excel(df, vehicle, settings):
-    directory = "../Field Experiments/Veepeak/" + vehicle + "/Processed/"
+    directory = "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/" + vehicle + "/Processed/"
     output_file = vehicle + " - {0} - {1}.xlsx".format(
         settings["output_type"], settings["output_index"]
     )

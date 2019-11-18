@@ -194,7 +194,7 @@ TRIP = 2
 
 #%% [markdown]
 # ### Loading data from Excel to a pandas dataframe
-directory = "./Field Experiments/Veepeak/" + VEHICLE + "/Processed/"
+directory = "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/" + VEHICLE + "/Processed/"
 input_file = VEHICLE + ".xlsx"
 input_path = directory + input_file
 df = pd.read_excel(input_path, sheet_name=EXPERIMENTS[VEHICLE][TRIP], header=4)
