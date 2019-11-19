@@ -21,18 +21,22 @@ def load_from_Excel(vehicle, device, settings):
         settings[device]["input_type"], settings[device]["input_index"]
     )
     input_path = directory + input_file
-    sheets_dict = pd.read_excel(input_path, sheet_name=None, header=1)
+    sheets_dict = pd.read_excel(input_path, sheet_name=None, header=0)
+    print(len(sheets_dict))
     merged_df = pd.DataFrame()
     for sheet_name, df in sheets_dict.items():
         temp = df
         temp["sheet"] = sheet_name
-        merged_df.append(temp)
+        merged_df = merged_df.append(temp)
+    merged_df.reset_index(inplace=True, drop=True) 
     return merged_df
 
 
 #%% [markdown]
 # ### Performing inner join between two pandas dataframes
 def inner_join(left, right, join_key):
+    print(left[:2])
+    print(right[:2])
     return pd.merge(left, right, how="inner", on=join_key, sort=True, copy=True)
 
 
@@ -96,3 +100,5 @@ for vehicle in EXPERIMENTS:
     right = load_from_Excel(vehicle, "3DATX parSYNC Plus", SETTINGS)
     joined_table = inner_join(left, right, join_key="DATETIME")
     save_back_to_Excel(joined_table, vehicle, "3DATX parSYNC Plus", SETTINGS)
+
+# %%
