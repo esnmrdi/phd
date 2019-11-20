@@ -4,7 +4,6 @@
 
 #%% [markdown]
 # ## Loading required libraries
-import numpy as np
 import pandas as pd
 
 #%% [markdown]
@@ -22,22 +21,14 @@ def load_from_Excel(vehicle, device, settings):
     )
     input_path = directory + input_file
     sheets_dict = pd.read_excel(input_path, sheet_name=None, header=0)
-    print(len(sheets_dict))
     merged_df = pd.DataFrame()
     for sheet_name, df in sheets_dict.items():
+        df["DATETIME"] = df["DATETIME"].dt.strftime('%Y-%m-%d %H:%M:%S')
         temp = df
-        temp["sheet"] = sheet_name
-        merged_df = merged_df.append(temp)
-    merged_df.reset_index(inplace=True, drop=True) 
+        sheet_key = "SHEET_OBD" if device == "Veepeak" else "SHEET_PEMS"
+        temp[sheet_key] = sheet_name
+        merged_df = merged_df.append(temp, ignore_index=True)
     return merged_df
-
-
-#%% [markdown]
-# ### Performing inner join between two pandas dataframes
-def inner_join(left, right, join_key):
-    print(left[:2])
-    print(right[:2])
-    return pd.merge(left, right, how="inner", on=join_key, sort=True, copy=True)
 
 
 #%% [markdown]
@@ -51,11 +42,13 @@ def save_back_to_Excel(joined_table, vehicle, device, settings):
         + "/Processed/"
     )
     output_file = vehicle + " - {0} - {1}.xlsx".format(
-        settings["output_type"], settings["output_index"]
+        settings[device]["output_type"], settings[device]["output_index"]
     )
     output_path = directory + output_file
     with pd.ExcelWriter(output_path, engine="openpyxl", mode="w") as writer:
-        joined_table.to_excel(writer, sheet_name="Joined Table", header=True, index=None)
+        joined_table.to_excel(
+            writer, sheet_name="Joined Table", header=True, index=None
+        )
     print("{0} saved to Excel successfully!".format(vehicle))
     return None
 
@@ -98,7 +91,7 @@ for vehicle in EXPERIMENTS:
     # Load data corresponding to vehicle and device into a dataframe
     left = load_from_Excel(vehicle, "Veepeak", SETTINGS)
     right = load_from_Excel(vehicle, "3DATX parSYNC Plus", SETTINGS)
-    joined_table = inner_join(left, right, join_key="DATETIME")
+    joined_table = pd.merge(left, right, how="inner", on="DATETIME", sort=True)
     save_back_to_Excel(joined_table, vehicle, "3DATX parSYNC Plus", SETTINGS)
 
 # %%
