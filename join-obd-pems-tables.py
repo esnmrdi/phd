@@ -71,6 +71,7 @@ EXPERIMENTS = (
     "038 Kia Optima 2012 (2.4L Auto)",
     "039 Honda Fit 2009 (1.5L Auto)",
     "040 Mazda 6 2009 (2.5L Auto)",
+    "041 Nissan Micra 2019 (1.6L Auto)",
 )
 
 #%% [markdown]

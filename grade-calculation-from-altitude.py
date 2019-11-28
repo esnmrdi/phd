@@ -198,7 +198,7 @@ def plot_grade_estimates(df, vehicle, trip, settings):
 # ### General Settings
 plt.style.use("bmh")
 pd.options.mode.chained_assignment = None
-EXPERIMENTS = [
+EXPERIMENTS = (
     "009 Renault Logan 2014 (1.6L Manual)",
     "010 JAC J5 2015 (1.8L Auto)",
     "011 JAC S5 2017 (2.0L TC Auto)",
@@ -231,10 +231,8 @@ EXPERIMENTS = [
     "038 Kia Optima 2012 (2.4L Auto)",
     "039 Honda Fit 2009 (1.5L Auto)",
     "040 Mazda 6 2009 (2.5L Auto)",
-]
-EXPERIMENTS = [
-    "040 Mazda 6 2009 (2.5L Auto)",
-]
+    "041 Nissan Micra 2019 (1.6L Auto)",
+)
 
 #%% [markdown]
 # ### Grade calculation settings
