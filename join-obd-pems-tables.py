@@ -23,7 +23,7 @@ def load_from_Excel(vehicle, device, settings):
     sheets_dict = pd.read_excel(input_path, sheet_name=None, header=0)
     merged_df = pd.DataFrame()
     for sheet_name, df in sheets_dict.items():
-        df["DATETIME"] = df["DATETIME"].dt.strftime('%Y-%m-%d %H:%M:%S')
+        df["DATETIME"] = df["DATETIME"].dt.strftime("%Y-%m-%d %H:%M:%S")
         temp = df
         sheet_key = "SHEET_OBD" if device == "Veepeak" else "SHEET_PEMS"
         temp[sheet_key] = sheet_name
@@ -72,7 +72,9 @@ EXPERIMENTS = (
     "039 Honda Fit 2009 (1.5L Auto)",
     "040 Mazda 6 2009 (2.5L Auto)",
     "041 Nissan Micra 2019 (1.6L Auto)",
+    "042 Nissan Rouge 2020 (2.5L Auto)",
 )
+EXPERIMENTS = ("042 Nissan Rouge 2020 (2.5L Auto)",)
 
 #%% [markdown]
 # ### Join settings
