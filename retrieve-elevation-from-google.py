@@ -3,7 +3,7 @@
 # ### Ehsan Moradi, Ph.D. Candidate
 
 #%% [markdown]
-# ### Loading required packages
+# ### Load required packages
 import time
 import pandas as pd
 import json
@@ -193,7 +193,7 @@ TRIP = 2
 
 
 #%% [markdown]
-# ### Loading data from Excel to a pandas dataframe
+# ### Load data from Excel to a pandas dataframe
 directory = "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/" + VEHICLE + "/Processed/"
 input_file = VEHICLE + ".xlsx"
 input_path = directory + input_file
@@ -221,7 +221,7 @@ df["ELEV_ALT_DIFF_M"] = df["ELEV_M"] - df["ALT_M"]
 
 
 #%% [markdown]
-# ### Plotting the GPS altitute vs. Google elevation
+# ### Plot the GPS altitute vs. Google elevation
 source = ColumnDataSource(df)
 datetime = EXPERIMENTS[VEHICLE][TRIP]
 hover = HoverTool(

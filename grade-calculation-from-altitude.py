@@ -3,7 +3,7 @@
 # ### Ehsan Moradi, Ph.D. Candidate
 
 #%% [markdown]
-# ### Loading required packages
+# ### Load required packages
 import numpy as np
 import pandas as pd
 import scipy.signal
@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 #%% [markdown]
-# ### Loading data from Excel to a pandas dataframe
+# ### Load data from Excel to a pandas dataframe
 def load_from_Excel(vehicle, settings):
     directory = "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/" + vehicle + "/Processed/"
     input_file = vehicle + " - {0} - {1}.xlsx".format(
@@ -104,7 +104,7 @@ def remove_outlier_grades(calculated_grade):
 
 
 #%% [markdown]
-# ### Saving the calculated field back to Excel file
+# ### Save the calculated field back to Excel file
 def save_back_to_Excel(df, vehicle, trip, index, settings):
     df = df[1:]
     df = df.dropna()
@@ -121,7 +121,7 @@ def save_back_to_Excel(df, vehicle, trip, index, settings):
 
 
 #%% [markdown]
-# ### Plotting the RAW altitude
+# ### Plot the RAW altitude
 def plot_raw_altitude(df, vehicle, trip, settings):
     fig, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
     title = vehicle + " on " + trip[:10] + " @ " + trip[11:]
@@ -141,7 +141,7 @@ def plot_raw_altitude(df, vehicle, trip, settings):
 
 
 #%% [markdown]
-# ### Plotting the RAW altitude vs. Savitzky-Golay algorithm outputs
+# ### Plot the RAW altitude vs. Savitzky-Golay algorithm outputs
 def plot_savitzky_golay_output(df, vehicle, trip, settings):
     fig, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
     title = vehicle + " on " + trip[:10] + " @ " + trip[11:]
@@ -165,7 +165,7 @@ def plot_savitzky_golay_output(df, vehicle, trip, settings):
 
 
 #%% [markdown]
-# ### Plotting the calculated grade
+# ### Plot the calculated grade
 def plot_grade_estimates(df, vehicle, trip, settings):
     fig, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
     title = vehicle + " on " + trip[:10] + " @ " + trip[11:]
@@ -267,5 +267,3 @@ for vehicle in EXPERIMENTS:
         plot_grade_estimates(df, vehicle, trip, SETTINGS)
         # Save dataframe to a new Excel file
         save_back_to_Excel(df, vehicle, trip, index, SETTINGS)
-
-#%%

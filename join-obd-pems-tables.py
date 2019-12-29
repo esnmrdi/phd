@@ -3,11 +3,11 @@
 # ### Ehsan Moradi, Ph.D. Candidate
 
 #%% [markdown]
-# ## Loading required libraries
+# ## Load required libraries
 import pandas as pd
 
 #%% [markdown]
-# ### Loading data from Excel to pandas dataframe
+# ### Load data from Excel to pandas dataframe
 def load_from_Excel(vehicle, device, settings):
     directory = (
         "../../../Google Drive/Academia/PhD Thesis/Field Experiments/"
@@ -32,7 +32,7 @@ def load_from_Excel(vehicle, device, settings):
 
 
 #%% [markdown]
-# ### Saving the joined table back to Excel file
+# ### Save the joined table back to Excel file
 def save_back_to_Excel(joined_table, vehicle, device, settings):
     directory = (
         "../../../Google Drive/Academia/PhD Thesis/Field Experiments/"
@@ -93,7 +93,9 @@ for vehicle in EXPERIMENTS:
     # Load data corresponding to vehicle and device into a dataframe
     left = load_from_Excel(vehicle, "Veepeak", SETTINGS)
     right = load_from_Excel(vehicle, "3DATX parSYNC Plus", SETTINGS)
+    # Join tables based on DATETIME as the common column
     joined_table = pd.merge(left, right, how="inner", on="DATETIME", sort=True)
+    # Save the joined table back to Excel file
     save_back_to_Excel(joined_table, vehicle, "3DATX parSYNC Plus", SETTINGS)
 
 # %%

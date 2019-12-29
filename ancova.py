@@ -24,7 +24,7 @@ def load_sample_from_Excel():
 
 
 #%% [markdown]
-# ### Performing the ANCOVA
+# ### Perform the ANCOVA
 df_svr, df_ann = load_sample_from_Excel()
 # stats.normaltest(df_svr["AGE"])
 pg.ancova(
@@ -33,5 +33,3 @@ pg.ancova(
     covar="ENGINE_DISPLACEMENT",
     between="CAR_SEGMENT",
 )
-
-# %%

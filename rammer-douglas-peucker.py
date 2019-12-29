@@ -58,14 +58,14 @@ LABELS = {
 }
 
 #%% [markdown]
-# ### Loading observations from Excel into a pandas dataframe
+# ### Load data from Excel into a pandas dataframe
 dir = r"/Users/ehsan/Dropbox/Academia/PhD Thesis/Field Experiments/Veepeak"
 file = r"/009 Renault Logan 2014 (1.6L Manual)/Processed/009 Renault Logan 2014 (1.6L Manual).xlsx"
 path = dir + file
 df = pd.read_excel(path, sheet_name="Prepared for Modeling")
 
 #%% [markdown]
-# ### Applyting RDP on GPS altitude data to reduce the number of vertices
+# ### Apply RDP on GPS altitude data to reduce the number of vertices
 points = list(zip(df["order"][1500:2000], df["alt"][1500:2000]))
 reduced = np.array(rdp(points, epsilon=2))
 
