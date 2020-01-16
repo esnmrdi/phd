@@ -73,8 +73,8 @@ EXPERIMENTS = (
     "040 Mazda 6 2009 (2.5L Auto)",
     "041 Nissan Micra 2019 (1.6L Auto)",
     "042 Nissan Rouge 2020 (2.5L Auto)",
+    "043 Mazda CX-3 2019 (2.0L Auto)",
 )
-
 #%% [markdown]
 # ### Join settings
 SETTINGS = {
