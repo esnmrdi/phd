@@ -32,7 +32,8 @@ def load_from_Excel(vehicle, settings):
 def convert_to_mass_rate(df, settings):
     df["CO2_PPM"] = 10000 * df["CO2_PERC"]
     for gas in ("CO2", "NO2", "NO"):
-        df[gas + "ـMGM3"] = df[gas + "_PPM"] * settings["MOLECULAR_WEIGHT"]["AIR"] / settings["MOLECULAR_WEIGHT"][gas])
+        # this formula should be corrected for temperature and pressure (https://www.gastec.co.jp/en/technology/knowledge/concentration/)
+        df[gas + "ـMGM3"] = df[gas + "_PPM"] * settings["MOLECULAR_WEIGHT"]["AIR"] / settings["MOLECULAR_WEIGHT"][gas]
 
 
 #%% [markdown]
