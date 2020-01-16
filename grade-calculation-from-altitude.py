@@ -233,6 +233,7 @@ EXPERIMENTS = (
     "040 Mazda 6 2009 (2.5L Auto)",
     "041 Nissan Micra 2019 (1.6L Auto)",
     "042 Nissan Rouge 2020 (2.5L Auto)",
+    "043 Mazda CX-3 2019 (2.0L Auto)",
 )
 
 #%% [markdown]
@@ -267,3 +268,6 @@ for vehicle in EXPERIMENTS:
         plot_grade_estimates(df, vehicle, trip, SETTINGS)
         # Save dataframe to a new Excel file
         save_back_to_Excel(df, vehicle, trip, index, SETTINGS)
+
+
+# %%
