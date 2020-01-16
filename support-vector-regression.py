@@ -275,6 +275,14 @@ EXPERIMENTS = [
     "033 Toyota Corolla 2019 (1.8L Auto)",
     "034 Toyota Yaris 2015 (1.5L Auto)",
     "035 Kia Rio 2013 (1.6L Auto)",
+    "036 Jeep Patriot 2010 (2.4L Auto)",
+    "037 Chevrolet Malibu 2019 (1.5L TC Auto)",
+    "038 Kia Optima 2012 (2.4L Auto)",
+    "039 Honda Fit 2009 (1.5L Auto)",
+    "040 Mazda 6 2009 (2.5L Auto)",
+    "041 Nissan Micra 2019 (1.6L Auto)",
+    "042 Nissan Rouge 2020 (2.5L Auto)",
+    "043 Mazda CX-3 2019 (2.0L Auto)",
 ]
 
 
