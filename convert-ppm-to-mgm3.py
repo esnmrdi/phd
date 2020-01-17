@@ -30,10 +30,11 @@ def load_from_Excel(vehicle, settings):
 #%% [markdown]
 # ### Data transformation for concentration fields
 def convert_ppm_to_mgm3(df, settings):
+    df["PM_mGM3"] = df["PM_MGM3"] / 1000
     df["CO2_PPM"] = 10000 * df["CO2_PERC"]
     for gas in ("CO2", "NO2", "NO"):
         # https://www.gastec.co.jp/en/technology/knowledge/concentration/
-        df[gas + "_MGM3"] = (
+        df[gas + "_mGM3"] = (
             df[gas + "_PPM"]
             * (settings["MOLECULAR_WEIGHT"][gas] / 22.4)
             * (273 / (273 + df["INT_AIR_TMP_C"]))
