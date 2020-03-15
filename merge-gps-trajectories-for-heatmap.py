@@ -12,7 +12,11 @@ import pandas as pd
 def load_data_from_Excel(experiments, settings):
     df = pd.DataFrame()
     for vehicle in experiments[settings["city"]]:
-        input_path = "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/Aggregated GPS Trajectories/" + vehicle + ".xlsx"
+        input_path = (
+            "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/Aggregated GPS Trajectories/"
+            + vehicle
+            + ".xlsx"
+        )
         sheets_dict = pd.read_excel(input_path, sheet_name=None, header=0)
         for _, sheet in sheets_dict.items():
             df = df.append(sheet)
@@ -22,8 +26,11 @@ def load_data_from_Excel(experiments, settings):
 # %% [markdown]
 # ### Save the aggregated dataframe back to a single Excel file
 def save_back_to_Excel(df, settings):
-    output_path = "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/Aggregated GPS Trajectories - " + \
-        settings["city"] + ".xlsx"
+    output_path = (
+        "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/Aggregated GPS Trajectories - "
+        + settings["city"]
+        + ".xlsx"
+    )
     with pd.ExcelWriter(output_path, engine="openpyxl", mode="w") as writer:
         df.to_excel(writer, header=True, index=None)
     print("Data is saved to Excel successfully!")
@@ -74,12 +81,10 @@ EXPERIMENTS = {
         "025 Chevrolet Captiva 2010 (2.4L Auto)",
         "026 Nissan Versa 2013 (1.6L Auto)",
         "027 Chevrolet Cruze 2011 (1.8L Manual)",
-    ]
+    ],
 }
 
-SETTINGS = {
-    "city": "Bucaramanga"
-}
+SETTINGS = {"city": "Bucaramanga"}
 
 
 # %% [markdown]
@@ -88,6 +93,3 @@ SETTINGS = {
 df = load_data_from_Excel(EXPERIMENTS, SETTINGS)
 # Save the aggregated dataframe back to a single Excel file
 save_back_to_Excel(df, SETTINGS)
-
-
-# %%
