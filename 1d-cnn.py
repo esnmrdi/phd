@@ -113,7 +113,7 @@ EXPERIMENTS = (
 EXPERIMENTS = ("015 VW Jetta 2016 (1.4L TC Auto)",)
 
 #%% [markdown]
-# ### ANN settings
+# ### CNN settings
 SETTINGS = {
     "DEPENDENT": "FCR_LH",  # other dependents to work on are RPM, PM_mGM3, NO2_mGM3, NO_mGM3, and CO2_mGM3
     "FEATURES": ("SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG"),
