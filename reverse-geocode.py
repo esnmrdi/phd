@@ -102,8 +102,8 @@ SETTINGS = {
     "output_type": "NONE",
     "input_index": "01",
     "output_index": "01 - RGEOCODED",
-    "google_api_key_ehsan": "AIzaSyAcLBO3kRbnDePi8SrdegZRGKjc8zLu55g",
-    "google_api_key_atena": "AIzaSyCifJQdfarDRkCD5tbxmCRwv0GtbQZvQfQ"
+    "google_api_key_ehsan": "",
+    "google_api_key_atena": ""
 }
 
 #%% [markdown]
