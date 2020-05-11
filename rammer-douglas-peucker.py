@@ -49,12 +49,12 @@ def rdp(points, epsilon):
 # ### General settings
 VEHICLE = "009 Renault Logan 2014 (1.6L Manual)"
 LABELS = {
-    "fcr_gs": "Fuel Consumption Rate (g/s)",
-    "spd_si": "Speed (m/s)",
-    "acc_si": "Acceleration (m/s2)",
-    "corr_grade": "Grade (deg)",
-    "alt": "Altitude (m)",
-    "state": "Engine State",
+    "FCR_GS": "Fuel Consumption Rate (g/s)",
+    "SPD_SI": "Speed (m/s)",
+    "ACC_SI": "Acceleration (m/s2)",
+    "CORR_GRADE": "Grade (deg)",
+    "ALT": "Altitude (m)",
+    "STATE": "Engine State",
 }
 
 #%% [markdown]
@@ -76,7 +76,7 @@ gs = gridspec.GridSpec(2, 1, figure=fig, hspace=0.5)
 gs.tight_layout(fig)
 ax = fig.add_subplot(gs[0])
 ax.set_xlabel("Time (s)")
-ax.set_ylabel(LABELS["alt"])
+ax.set_ylabel(LABELS["ALT"])
 ax.grid(color="k", linestyle=":", linewidth=1, alpha=0.5)
 ax.plot(df["alt"][1500:2000])
 # ax.plot(reduced[:, 1])

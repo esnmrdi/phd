@@ -22,7 +22,7 @@ def load_from_Excel(vehicle, settings):
         + "/Processed/"
     )
     input_file = vehicle + " - {0} - {1}.xlsx".format(
-        settings["input_type"], settings["input_index"]
+        settings["INPUT_TYPE"], settings["INPUT_INDEX"]
     )
     input_path = directory + input_file
     sheets_dict = pd.read_excel(input_path, sheet_name=None, header=0)
@@ -34,26 +34,26 @@ def load_from_Excel(vehicle, settings):
 
 #%% [markdown]
 # ### Save the reverse geo-coded data back to Excel file
-def save_back_to_Excel(df, vehicle, settings):
+def save_to_excel(df, vehicle, settings):
     directory = (
         "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
         + vehicle
         + "/Processed/"
     )
     output_file = vehicle + " - {0} - {1}.xlsx".format(
-        settings["output_type"], settings["output_index"]
+        settings["OUTPUT_TYPE"], settings["OUTPUT_INDEX"]
     )
     output_path = directory + output_file
     with pd.ExcelWriter(output_path, engine="openpyxl", mode="w") as writer:
         df.to_excel(writer, header=True, index=None)
-    print("Data is saved to Excel successfully!")
+    print("{0} -> Data is saved to Excel successfully!".format(vehicle))
     return None
 
 
 #%% [markdown]
 # ### General settings
 pd.options.mode.chained_assignment = None
-EXPERIMENTS = [
+EXPERIMENTS = (
     "009 Renault Logan 2014 (1.6L Manual)",
     "010 JAC J5 2015 (1.8L Auto)",
     "011 JAC S5 2017 (2.0L TC Auto)",
@@ -89,21 +89,17 @@ EXPERIMENTS = [
     "041 Nissan Micra 2019 (1.6L Auto)",
     "042 Nissan Rouge 2020 (2.5L Auto)",
     "043 Mazda CX-3 2019 (2.0L Auto)",
-]
-EXPERIMENTS = [
-    "022 Chevrolet Spark GT 2012 (1.2L Manual)",
-]
+)
 
 
 #%% [markdown]
 # ### Reverse Geo-Code Settings
 SETTINGS = {
-    "input_type": "NONE",
-    "output_type": "NONE",
-    "input_index": "01",
-    "output_index": "01 - RGEOCODED",
-    "google_api_key_ehsan": "",
-    "google_api_key_atena": ""
+    "INPUT_TYPE": "NONE",
+    "OUTPUT_TYPE": "NONE",
+    "INPUT_INDEX": "01",
+    "OUTPUT_INDEX": "02",
+    "GOOGLE_API_KEY": "",
 }
 
 #%% [markdown]
@@ -117,11 +113,11 @@ def get_component(location, component_type):
 #%% [markdown]
 # ### Batch execution on all vehicles and their trips
 # For Google Geocoding API
-locator = GoogleV3(api_key=SETTINGS["google_api_key"], timeout=100)
+locator = GoogleV3(api_key=SETTINGS["GOOGLE_API_KEY"], timeout=100)
 # For OpenStreetMap
 # locator = Nominatim(user_agent="esn.mrd@gmail.com")
 # For Google Geocoding API
-rgeocode = RateLimiter(locator.reverse, min_delay_seconds=.1)
+rgeocode = RateLimiter(locator.reverse, min_delay_seconds=0.1)
 # For OpenStreetMap
 # rgeocode = RateLimiter(locator.reverse, min_delay_seconds=0.1)
 tqdm.pandas()
@@ -140,6 +136,6 @@ for vehicle in EXPERIMENTS:
     # df = df.assign(LINK_ID=(df["LINK"]).astype("category").cat.codes)
 
     # Save the predicted field back to Excel file
-    save_back_to_Excel(df, vehicle, SETTINGS)
+    save_to_excel(df, vehicle, SETTINGS)
 
 # %%

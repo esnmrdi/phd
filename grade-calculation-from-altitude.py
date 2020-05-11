@@ -13,9 +13,13 @@ import seaborn as sns
 #%% [markdown]
 # ### Load data from Excel to a pandas dataframe
 def load_from_Excel(vehicle, settings):
-    directory = "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/" + vehicle + "/Processed/"
+    directory = (
+        "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
+        + vehicle
+        + "/Processed/"
+    )
     input_file = vehicle + " - {0} - {1}.xlsx".format(
-        settings["input_type"], settings["input_index"]
+        settings["INPUT_TYPE"], settings["INPUT_INDEX"]
     )
     input_path = directory + input_file
     sheets_dict = pd.read_excel(input_path, sheet_name=None, header=4)
@@ -105,18 +109,22 @@ def remove_outlier_grades(calculated_grade):
 
 #%% [markdown]
 # ### Save the calculated field back to Excel file
-def save_back_to_Excel(df, vehicle, trip, index, settings):
+def save_to_excel(df, vehicle, trip, index, settings):
     df = df[1:]
     df = df.dropna()
-    directory = "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/" + vehicle + "/Processed/"
+    directory = (
+        "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
+        + vehicle
+        + "/Processed/"
+    )
     output_file = vehicle + " - {0} - {1}.xlsx".format(
-        settings["output_type"], settings["output_index"]
+        settings["OUTPUT_TYPE"], settings["OUTPUT_INDEX"]
     )
     output_path = directory + output_file
     write_mode = "w" if index == 0 else "a"
     with pd.ExcelWriter(output_path, engine="openpyxl", mode=write_mode) as writer:
         df.to_excel(writer, sheet_name=trip, header=True, index=None)
-    print("{0} - {1} saved to Excel successfully!".format(vehicle, trip))
+    print("{0}, {1} -> Data is saved to Excel successfully!".format(vehicle, trip))
     return None
 
 
@@ -131,7 +139,7 @@ def plot_raw_altitude(df, vehicle, trip, settings):
     plt.show()
     fig.savefig(
         "../../../Google Drive/Academia/PhD Thesis/Modeling Outputs/{0}/{1} - RAW Altitude.jpg".format(
-            settings["input_type"], title
+            settings["INPUT_TYPE"], title
         ),
         dpi=300,
         quality=95,
@@ -155,7 +163,7 @@ def plot_savitzky_golay_output(df, vehicle, trip, settings):
     plt.show()
     fig.savefig(
         "../../../Google Drive/Academia/PhD Thesis/Modeling Outputs/{0}/{1} - Savitzky-Golay Output.jpg".format(
-            settings["input_type"], title
+            settings["INPUT_TYPE"], title
         ),
         dpi=300,
         quality=95,
@@ -185,7 +193,7 @@ def plot_grade_estimates(df, vehicle, trip, settings):
     plt.show()
     fig.savefig(
         "../../../Google Drive/Academia/PhD Thesis/Modeling Outputs/{0}/{1} - Estimated Grade.jpg".format(
-            settings["input_type"], title
+            settings["INPUT_TYPE"], title
         ),
         dpi=300,
         quality=95,
@@ -239,10 +247,10 @@ EXPERIMENTS = (
 #%% [markdown]
 # ### Grade calculation settings
 SETTINGS = {
-    "input_type": "NONE",
-    "output_type": "NONE",
-    "input_index": "00",
-    "output_index": "01",
+    "INPUT_TYPE": "NONE",
+    "OUTPUT_TYPE": "NONE",
+    "INPUT_INDEX": "00",
+    "OUTPUT_INDEX": "01",
 }
 
 #%% [markdown]
@@ -267,7 +275,7 @@ for vehicle in EXPERIMENTS:
         # Plot grade estimates
         plot_grade_estimates(df, vehicle, trip, SETTINGS)
         # Save dataframe to a new Excel file
-        save_back_to_Excel(df, vehicle, trip, index, SETTINGS)
+        save_to_excel(df, vehicle, trip, index, SETTINGS)
 
 
 # %%

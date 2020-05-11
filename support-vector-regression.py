@@ -16,9 +16,13 @@ from sklearn.metrics.pairwise import rbf_kernel, linear_kernel, polynomial_kerne
 #%% [markdown]
 # ### Load sample data from Excel to a pandas dataframe
 def load_sample_from_Excel(vehicle, settings):
-    directory = "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/" + vehicle + "/Processed/"
+    directory = (
+        "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
+        + vehicle
+        + "/Processed/"
+    )
     input_file = vehicle + " - {0} - {1}.xlsx".format(
-        settings["input_type"], settings["input_index"]
+        settings["INPUT_TYPE"], settings["INPUT_INDEX"]
     )
     input_path = directory + input_file
     sheets_dict = pd.read_excel(input_path, sheet_name=None, header=0)
@@ -26,8 +30,8 @@ def load_sample_from_Excel(vehicle, settings):
     for _, sheet in sheets_dict.items():
         df = df.append(sheet)
     df.reset_index(inplace=True, drop=True)
-    if df.shape[0] > settings["max_sample_size"]:
-        sample_size = settings["max_sample_size"]
+    if df.shape[0] > settings["MAX_SAMPLE_SIZE"]:
+        sample_size = settings["MAX_SAMPLE_SIZE"]
         df = df.sample(sample_size)
     else:
         sample_size = df.shape[0]
@@ -42,10 +46,10 @@ def add_lagged_features(df, settings, index):
         "RPM_PRED_" + settings["RPM_BEST_ARCHS"][index]
         if feature == "RPM_PRED"
         else feature
-        for feature in settings["features"]
+        for feature in settings["FEATURES"]
     ]
-    for feature in settings["lagged_features"]:
-        for i in range(settings["lag_order"]):
+    for feature in settings["LAGGED_FEATURES"]:
+        for i in range(settings["LAG_ORDER"]):
             new_feature = feature + "_L" + str(i + 1)
             total_features.append(new_feature)
             df_temp[new_feature] = df_temp[feature].shift(i + 1)
@@ -57,7 +61,7 @@ def add_lagged_features(df, settings, index):
 # ### Scale the features
 def scale(df, total_features, settings):
     df_temp = df.copy()
-    feature_names = total_features + [settings["dependent"]]
+    feature_names = total_features + [settings["DEPENDENT"]]
     scaler = preprocessing.StandardScaler().fit(df_temp[feature_names])
     df_temp[feature_names] = scaler.transform(df_temp[feature_names])
     return df_temp, scaler
@@ -119,19 +123,19 @@ def build_rbf_pol_lin(**kwargs):
 # ### Tune the SVR model using grid search and cross validation
 def tune_svr(df, total_features, scaler, settings):
     df_temp = df.copy()
-    cv = KFold(n_splits=settings["n_splits"], shuffle=True)
+    cv = KFold(n_splits=settings["N_SPLITS"], shuffle=True)
     clf = GridSearchCV(
         SVR(kernel="rbf"),
-        param_grid=settings["param_grid"],
+        param_grid=settings["PARAM_GRID"],
         cv=cv,
         scoring="r2",
         verbose=1,
         n_jobs=-1,
     )
-    clf.fit(df_temp[total_features], df_temp[settings["dependent"]])
-    df_temp[settings["predicted"]] = clf.predict(df_temp[total_features])
-    df_temp[[settings["dependent"]] + [settings["predicted"]]] = reverse_scale(
-        df_temp[[settings["dependent"]] + [settings["predicted"]]], scaler
+    clf.fit(df_temp[total_features], df_temp[settings["DEPENDENT"]])
+    df_temp[settings["PREDICTED"]] = clf.predict(df_temp[total_features])
+    df_temp[[settings["DEPENDENT"]] + [settings["PREDICTED"]]] = reverse_scale(
+        df_temp[[settings["DEPENDENT"]] + [settings["PREDICTED"]]], scaler
     )
     return df_temp, clf.best_score_, clf.best_estimator_, clf.cv_results_
 
@@ -147,7 +151,7 @@ def plot_grid_search_results(vehicle, sample_size, best_score, cv_results, setti
     results.sort_values(["epsilon", "gamma", "C"], ascending=True, inplace=True)
     fig, axn = plt.subplots(
         1,
-        len(settings["param_grid"]["epsilon"]),
+        len(settings["PARAM_GRID"]["EPSILON"]),
         figsize=(20, 5),
         constrained_layout=True,
     )
@@ -158,7 +162,7 @@ def plot_grid_search_results(vehicle, sample_size, best_score, cv_results, setti
         fontsize=18,
     )
     for index, ax in enumerate(axn.flat):
-        epsilon = settings["param_grid"]["epsilon"][index]
+        epsilon = settings["PARAM_GRID"]["EPSILON"][index]
         sub_result = results.loc[results["epsilon"] == epsilon]
         sub_result = sub_result.drop(["epsilon"], axis=1)
         matrix = sub_result.pivot("C", "gamma", "score")
@@ -179,9 +183,9 @@ def plot_grid_search_results(vehicle, sample_size, best_score, cv_results, setti
     plt.show()
     fig.savefig(
         "../../../Google Drive/Academia/PhD Thesis/Modeling Outputs/{0}/{1} - {2}/{3} - Grid Search Result.jpg".format(
-            settings["output_type"],
-            settings["output_index"],
-            settings["model_structure"],
+            settings["OUTPUT_TYPE"],
+            settings["OUPUT_INDEX"],
+            settings["MODEL_STRUCTURE"],
             vehicle,
         ),
         dpi=300,
@@ -195,8 +199,8 @@ def plot_grid_search_results(vehicle, sample_size, best_score, cv_results, setti
 def plot_accuracy(df, vehicle, sample_size, best_score, settings):
     fig, ax = plt.subplots(1, 1, figsize=(6, 6), constrained_layout=True)
     ax = sns.regplot(
-        x=settings["dependent"],
-        y=settings["predicted"],
+        x=settings["DEPENDENT"],
+        y=settings["PREDICTED"],
         data=df,
         fit_reg=True,
         ax=ax,
@@ -205,8 +209,8 @@ def plot_accuracy(df, vehicle, sample_size, best_score, settings):
         ci=None,
     )
     ax.set(
-        xlabel=settings["labels"][settings["dependent"]],
-        ylabel=settings["labels"][settings["predicted"]],
+        xlabel=settings["labels"][settings["DEPENDENT"]],
+        ylabel=settings["labels"][settings["PREDICTED"]],
     )
     ax.set_xlim(0)
     ax.set_ylim(0)
@@ -218,9 +222,9 @@ def plot_accuracy(df, vehicle, sample_size, best_score, settings):
     plt.show()
     fig.savefig(
         "../../../Google Drive/Academia/PhD Thesis/Modeling Outputs/{0}/{1} - {2}/{3} - Observed vs. Predicted.jpg".format(
-            settings["output_type"],
-            settings["output_index"],
-            settings["model_structure"],
+            settings["OUTPUT_TYPE"],
+            settings["OUTPUT_INDEX"],
+            settings["MODEL_STRUCTURE"],
             vehicle,
         ),
         dpi=300,
@@ -231,15 +235,19 @@ def plot_accuracy(df, vehicle, sample_size, best_score, settings):
 
 #%% [markdown]
 # ### Save the predicted field back to Excel file
-def save_back_to_Excel(df, vehicle, settings):
-    directory = "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/" + vehicle + "/Processed/"
+def save_to_excel(df, vehicle, settings):
+    directory = (
+        "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
+        + vehicle
+        + "/Processed/"
+    )
     output_file = vehicle + " - {0} - {1}.xlsx".format(
-        settings["output_type"], settings["output_index"]
+        settings["OUTPUT_TYPE"], settings["OUTPUT_INDEX"]
     )
     output_path = directory + output_file
     with pd.ExcelWriter(output_path, engine="openpyxl", mode="w") as writer:
         df.to_excel(writer, header=True, index=None)
-    print("Data is saved to Excel successfully!")
+    print("{0} -> Data is saved to Excel successfully!".format(vehicle))
     return None
 
 
@@ -247,7 +255,7 @@ def save_back_to_Excel(df, vehicle, settings):
 # ### General settings
 plt.style.use("bmh")
 pd.options.mode.chained_assignment = None
-EXPERIMENTS = [
+EXPERIMENTS = (
     "009 Renault Logan 2014 (1.6L Manual)",
     "010 JAC J5 2015 (1.8L Auto)",
     "011 JAC S5 2017 (2.0L TC Auto)",
@@ -283,25 +291,25 @@ EXPERIMENTS = [
     "041 Nissan Micra 2019 (1.6L Auto)",
     "042 Nissan Rouge 2020 (2.5L Auto)",
     "043 Mazda CX-3 2019 (2.0L Auto)",
-]
+)
 
 
 #%% [markdown]
 # ### SVR settings
 SETTINGS = {
-    "dependent": "FCR_LH",
-    "predicted": "FCR_LH_PRED",
-    "features": ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG", "RPM_PRED"],
-    "lagged_features": ["SPD_KH", "NO_OUTLIER_GRADE_DEG"],
-    "lag_order": 1,
-    "max_sample_size": 5400,
-    "n_splits": 5,
-    "param_grid": {
-        "gamma": np.logspace(-3, 1, num=5, base=10),
+    "DEPENDENT": "FCR_LH",
+    "PREDICTED": "FCR_LH_PRED",
+    "FEATURES": ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG", "RPM_PRED"],
+    "LAGGED_FEATURES": ["SPD_KH", "NO_OUTLIER_GRADE_DEG"],
+    "LAG_ORDER": 1,
+    "MAX_SAMPLE_SIZE": 5400,
+    "N_SPLITS": 5,
+    "PARAM_GRID": {
+        "GAMMA": np.logspace(-3, 1, num=5, base=10),
         "C": np.logspace(-1, 2, num=4, base=10),
-        "epsilon": np.logspace(-4, 0, num=5, base=10),
+        "EPSILON": np.logspace(-4, 0, num=5, base=10),
     },
-    "labels": {
+    "LABELS": {
         "FCR_LH": "Observed Fuel Consumption Rate (L/H)",
         "FCR_LH_PRED": "Predicted Fuel Consumption Rate (L/H)",
         "RPM": "Observed Engine Speed (rev/min)",
@@ -310,11 +318,11 @@ SETTINGS = {
         "ACC_MS2": "Acceleration (m/s2)",
         "NO_OUTLIER_GRADE_DEG": "Road Grade (Deg)",
     },
-    "model_structure": "FCR ~ SPD + SPD_L1 + ACC + GRADE + GRADE_L1 + RPM_PRED",
-    "input_type": "ANN",
-    "output_type": "SVR",
-    "input_index": "17",
-    "output_index": "19",
+    "MODEL_STRUCTURE": "FCR ~ SPD + SPD_L1 + ACC + GRADE + GRADE_L1 + RPM_PRED",
+    "INPUT_TYPE": "ANN",
+    "OUTPUT_TYPE": "SVR",
+    "INPUT_INDEX": "17",
+    "OUTPUT_INDEX": "19",
     "RPM_BEST_ARCHS": [
         "(1,128)",
         "(2,64)",
@@ -364,4 +372,4 @@ for index, vehicle in enumerate(EXPERIMENTS):
     # Plot predictions vs. ground-truth and save plot to file
     plot_accuracy(df, vehicle, sample_size, best_score, SETTINGS)
     # Save the predicted field back to Excel file
-    save_back_to_Excel(df, vehicle, SETTINGS)
+    save_to_excel(df, vehicle, SETTINGS)

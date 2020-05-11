@@ -11,7 +11,7 @@ import pandas as pd
 # ### Load trajectory data from Excel to a pandas dataframe
 def load_data_from_Excel(experiments, settings):
     df = pd.DataFrame()
-    for vehicle in experiments[settings["city"]]:
+    for vehicle in experiments[settings["CITY"]]:
         input_path = (
             "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/Aggregated GPS Trajectories/"
             + vehicle
@@ -25,10 +25,10 @@ def load_data_from_Excel(experiments, settings):
 
 # %% [markdown]
 # ### Save the aggregated dataframe back to a single Excel file
-def save_back_to_Excel(df, settings):
+def save_to_excel(df, settings):
     output_path = (
         "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/Aggregated GPS Trajectories - "
-        + settings["city"]
+        + settings["CITY"]
         + ".xlsx"
     )
     with pd.ExcelWriter(output_path, engine="openpyxl", mode="w") as writer:
@@ -41,15 +41,15 @@ def save_back_to_Excel(df, settings):
 # ### General settings
 pd.options.mode.chained_assignment = None
 EXPERIMENTS = {
-    "Tehran": [
+    "Tehran": (
         "009 Renault Logan 2014 (1.6L Manual)",
         "010 JAC J5 2015 (1.8L Auto)",
         "011 JAC S5 2017 (2.0L TC Auto)",
         "012 IKCO Dena 2016 (1.65L Manual)",
         "013 Geely Emgrand7 2014 (1.8L Auto)",
         "014 Kia Cerato 2016 (2.0L Auto)",
-    ],
-    "Montreal": [
+    ),
+    "Montreal": (
         "015 VW Jetta 2016 (1.4L TC Auto)",
         "016 Hyundai Sonata Sport 2019 (2.4L Auto)",
         "017 Chevrolet Trax 2019 (1.4L TC Auto)",
@@ -72,8 +72,8 @@ EXPERIMENTS = {
         "041 Nissan Micra 2019 (1.6L Auto)",
         "042 Nissan Rouge 2020 (2.5L Auto)",
         "043 Mazda CX-3 2019 (2.0L Auto)",
-    ],
-    "Bucaramanga": [
+    ),
+    "Bucaramanga": (
         "021 Chevrolet N300 2014 (1.2L Manual)",
         "022 Chevrolet Spark GT 2012 (1.2L Manual)",
         "023 Mazda 2 2012 (1.4L Auto)",
@@ -81,10 +81,10 @@ EXPERIMENTS = {
         "025 Chevrolet Captiva 2010 (2.4L Auto)",
         "026 Nissan Versa 2013 (1.6L Auto)",
         "027 Chevrolet Cruze 2011 (1.8L Manual)",
-    ],
+    ),
 }
 
-SETTINGS = {"city": "Bucaramanga"}
+SETTINGS = {"CITY": "Bucaramanga"}
 
 
 # %% [markdown]
@@ -92,4 +92,4 @@ SETTINGS = {"city": "Bucaramanga"}
 # Load trajectory data from Excel to a pandas dataframe
 df = load_data_from_Excel(EXPERIMENTS, SETTINGS)
 # Save the aggregated dataframe back to a single Excel file
-save_back_to_Excel(df, SETTINGS)
+save_to_excel(df, SETTINGS)

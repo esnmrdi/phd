@@ -33,7 +33,11 @@ output_notebook()
 #%% [markdown]
 # ### Load data from Excel to a pandas dataframe
 def load_from_Excel(vehicle, trip):
-    directory = "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/" + vehicle + "/Processed/"
+    directory = (
+        "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
+        + vehicle
+        + "/Processed/"
+    )
     input_file = vehicle + " + Grade.xlsx"
     input_path = directory + input_file
     df = pd.read_excel(input_path, sheet_name=EXPERIMENTS[vehicle][trip], header=0)
@@ -104,8 +108,12 @@ def plot_histogram(df, feature_name):
 
 #%% [markdown]
 # ### Save the calculated field back in Excel file
-def save_back_to_Excel(df, vehicle, trip):
-    directory = "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/" + vehicle + "/Processed/"
+def save_to_excel(df, vehicle, trip):
+    directory = (
+        "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
+        + vehicle
+        + "/Processed/"
+    )
     output_file = vehicle + " + Grade + HMS.xlsx"
     output_path = directory + output_file
     write_mode = "w" if trip == 0 else "a"
@@ -114,7 +122,7 @@ def save_back_to_Excel(df, vehicle, trip):
             writer, sheet_name=EXPERIMENTS[vehicle][trip], header=True, index=None
         )
     print(
-        "{0} {1} saved to Excel successfully!".format(
+        "{0}, {1} -> Data is saved to Excel successfully!".format(
             vehicle, EXPERIMENTS[vehicle][trip]
         )
     )
@@ -283,4 +291,4 @@ for vehicle, trips in EXPERIMENTS.items():
         # Predict hidden states for the x
         df["HMM_STATE"] = model.predict(emissions)
         # Save dataframe to a new Excel file
-        save_back_to_Excel(df, vehicle, trip)
+        save_to_excel(df, vehicle, trip)

@@ -71,7 +71,7 @@ def define_model(features, settings):
 
 #%% [markdown]
 # ### Save the predicted field back to Excel file
-def save_back_to_Excel(df, vehicle, settings):
+def save_to_excel(df, vehicle, settings):
     directory = (
         "../../../Google Drive/Academia/PhD Thesis/Field Experiments/3DATX parSYNC Plus/"
         + vehicle
@@ -153,4 +153,4 @@ for vehicle in EXPERIMENTS:
     # Scale the features
     df, scaler = scale(df, SETTINGS)
     # Save the predicted field back to Excel file
-    save_back_to_Excel(df, vehicle, SETTINGS)
+    save_to_excel(df, vehicle, SETTINGS)

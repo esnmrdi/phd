@@ -28,8 +28,5 @@ def load_sample_from_Excel():
 df_svr, df_ann = load_sample_from_Excel()
 # stats.normaltest(df_svr["AGE"])
 pg.ancova(
-    data=df_svr,
-    dv="SCORE",
-    covar="ENGINE_DISPLACEMENT",
-    between="CAR_SEGMENT",
+    data=df_svr, dv="SCORE", covar="ENGINE_DISPLACEMENT", between="CAR_SEGMENT",
 )

@@ -42,9 +42,13 @@ class ReportProgress(tf.keras.callbacks.Callback):
 #%% [markdown]
 # ### Load sample data from Excel to a pandas dataframe
 def load_sample_from_Excel(vehicle, settings):
-    directory = "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/" + vehicle + "/Processed/"
+    directory = (
+        "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
+        + vehicle
+        + "/Processed/"
+    )
     input_file = vehicle + " - {0} - {1}.xlsx".format(
-        settings["input_type"], settings["input_index"]
+        settings["INPUT_TYPE"], settings["INPUT_INDEX"]
     )
     input_path = directory + input_file
     sheets_dict = pd.read_excel(input_path, sheet_name=None, header=0)
@@ -52,8 +56,8 @@ def load_sample_from_Excel(vehicle, settings):
     for _, sheet in sheets_dict.items():
         df = df.append(sheet)
     df.reset_index(inplace=True, drop=True)
-    if df.shape[0] > settings["max_sample_size"]:
-        sample_size = settings["max_sample_size"]
+    if df.shape[0] > settings["MAX_SAMPLE_SIZE"]:
+        sample_size = settings["MAX_SAMPLE_SIZE"]
         df = df.sample(sample_size)
     else:
         sample_size = df.shape[0]
@@ -64,15 +68,15 @@ def load_sample_from_Excel(vehicle, settings):
 # ### Add lagged features to the dataframe
 def add_lagged_features(df, settings, index):
     df_temp = df.copy()
-    total_features = settings["features"]
+    total_features = settings["FEATURES"]
     total_features = [
         "RPM_PRED_" + settings["RPM_BEST_ARCHS"][index]
         if feature == "RPM_PRED"
         else feature
-        for feature in settings["features"]
+        for feature in settings["FEATURES"]
     ]
-    for feature in settings["lagged_features"]:
-        for i in range(settings["lag_order"]):
+    for feature in settings["LAGGED_FEATURES"]:
+        for i in range(settings["LAG_ORDER"]):
             new_feature = feature + "_L" + str(i + 1)
             total_features.append(new_feature)
             df_temp[new_feature] = df_temp[feature].shift(i + 1)
@@ -84,7 +88,7 @@ def add_lagged_features(df, settings, index):
 # ### Scale the features
 def scale(df, total_features, settings):
     df_temp = df.copy()
-    feature_names = total_features + [settings["dependent"]]
+    feature_names = total_features + [settings["DEPENDENT"]]
     scaler = preprocessing.StandardScaler().fit(df_temp[feature_names])
     df_temp[feature_names] = scaler.transform(df_temp[feature_names])
     return df_temp, scaler
@@ -103,17 +107,17 @@ def reverse_scale(df, scaler):
 def define_models(total_features, settings):
     n_features = len(total_features)
     models = []
-    for n_layers, n_neurons in settings["model_architectures"]:
+    for n_layers, n_neurons in settings["MODEL_ARCHITECTURES"]:
         model = tf.keras.models.Sequential()
         model.add(
             tf.keras.layers.Dense(
                 n_neurons, input_shape=[n_features], activation="relu"
             )
         )
-        model.add(tf.keras.layers.Dropout(settings["drop_prop"]))
+        model.add(tf.keras.layers.Dropout(settings["DROP_PROP"]))
         for _ in range(n_layers - 1):
             model.add(tf.keras.layers.Dense(n_neurons, activation="relu"))
-            model.add(tf.keras.layers.Dropout(settings["drop_prop"]))
+            model.add(tf.keras.layers.Dropout(settings["DROP_PROP"]))
         model.add(tf.keras.layers.Dense(1, activation="linear"))
         models.append(model)
     return models
@@ -122,12 +126,12 @@ def define_models(total_features, settings):
 #%% [markdown]
 # ### Report the train and test score
 def calculate_score(model, train_set, test_set, total_features, settings):
-    train_set[settings["predicted"]] = model.predict(train_set[total_features])
-    test_set[settings["predicted"]] = model.predict(test_set[total_features])
+    train_set[settings["PREDICTED"]] = model.predict(train_set[total_features])
+    test_set[settings["PREDICTED"]] = model.predict(test_set[total_features])
     r2_train = r2_score(
-        train_set[settings["dependent"]], train_set[settings["predicted"]]
+        train_set[settings["DEPENDENT"]], train_set[settings["PREDICTED"]]
     )
-    r2_test = r2_score(test_set[settings["dependent"]], test_set[settings["predicted"]])
+    r2_test = r2_score(test_set[settings["DEPENDENT"]], test_set[settings["PREDICTED"]])
     score = {}
     score["train"], score["test"] = r2_train, r2_test
     return score
@@ -139,44 +143,44 @@ def tune_ann(df, total_features, scaler, settings):
     df_temp = df.copy()
     models = define_models(total_features, settings)
     train_set, test_set = train_test_split(
-        df_temp, test_size=settings["test_split_ratio"], shuffle=True
+        df_temp, test_size=settings["TEST_SPLIT_RATIO"], shuffle=True
     )
-    x_train, y_train = train_set[total_features], train_set[settings["dependent"]]
-    x_test, y_test = test_set[total_features], test_set[settings["dependent"]]
+    x_train, y_train = train_set[total_features], train_set[settings["DEPENDENT"]]
+    x_test, y_test = test_set[total_features], test_set[settings["DEPENDENT"]]
     histories = []
     scores = []
     for index, model in enumerate(models):
         model.compile(
-            loss=settings["metrics"][0],
-            optimizer=tf.keras.optimizers.RMSprop(lr=settings["learning_rate"]),
-            metrics=settings["metrics"],
+            loss=settings["METRICS"][0],
+            optimizer=tf.keras.optimizers.RMSprop(lr=settings["LEARNING_RATE"]),
+            metrics=settings["METRICS"],
         )
         history = model.fit(
             x_train,
             y_train,
             batch_size=32,
-            epochs=settings["n_epochs"],
+            epochs=settings["N_EPOCHS"],
             validation_data=(x_test, y_test),
             shuffle=False,
             verbose=0,
             callbacks=[
                 ReportProgress(
-                    df_temp, settings["test_split_ratio"], settings["n_epochs"]
+                    df_temp, settings["TEST_SPLIT_RATIO"], settings["N_EPOCHS"]
                 )
             ],
         )
         predicted_temp = "{0}_({1},{2})".format(
-            settings["predicted"],
-            settings["model_architectures"][index][0],
-            settings["model_architectures"][index][1],
+            settings["PREDICTED"],
+            settings["MODEL_ARCHITECTURES"][index][0],
+            settings["MODEL_ARCHITECTURES"][index][1],
         )
         df_temp[predicted_temp] = model.predict(df_temp[total_features])
         df_temp[predicted_temp] = reverse_scale(df_temp[predicted_temp], scaler)
         histories.append(history)
         score = calculate_score(model, train_set, test_set, total_features, settings)
         scores.append(score)
-    df_temp[settings["dependent"]] = reverse_scale(
-        df_temp[settings["dependent"]], scaler
+    df_temp[settings["DEPENDENT"]] = reverse_scale(
+        df_temp[settings["DEPENDENT"]], scaler
     )
     return df_temp, scores, histories
 
@@ -185,28 +189,28 @@ def tune_ann(df, total_features, scaler, settings):
 # ### Plot training history and save plot to file
 def plot_training_results(vehicle, sample_size, scores, histories, settings):
     fig, axn = plt.subplots(
-        len(settings["model_architectures"]),
-        len(settings["metrics"]),
-        figsize=(30, 5 * len(settings["model_architectures"])),
+        len(settings["MODEL_ARCHITECTURES"]),
+        len(settings["METRICS"]),
+        figsize=(30, 5 * len(settings["MODEL_ARCHITECTURES"])),
         constrained_layout=True,
     )
-    for ax, metric in zip(axn[0], settings["metrics"]):
+    for ax, metric in zip(axn[0], settings["METRICS"]):
         ax.set_title(metric)
     fig.suptitle(
         "Experiment: {0}\nSample Size: {1}\n# of Epochs: {2}".format(
-            vehicle, sample_size, settings["n_epochs"]
+            vehicle, sample_size, settings["N_EPOCHS"]
         ),
         fontsize=24,
     )
     for index, ax in enumerate(axn.flat):
-        row = index // len(settings["metrics"])
-        col = index % len(settings["metrics"])
+        row = index // len(settings["METRICS"])
+        col = index % len(settings["METRICS"])
         history = histories[row]
         hist = pd.DataFrame(history.history)
         epochs = history.epoch
         sns.lineplot(
             x=epochs,
-            y=settings["metrics"][col],
+            y=settings["METRICS"][col],
             data=hist,
             ax=ax,
             label="Train",
@@ -214,7 +218,7 @@ def plot_training_results(vehicle, sample_size, scores, histories, settings):
         )
         sns.lineplot(
             x=epochs,
-            y="val_" + settings["metrics"][col],
+            y="val_" + settings["METRICS"][col],
             data=hist,
             ax=ax,
             label="Test",
@@ -223,7 +227,7 @@ def plot_training_results(vehicle, sample_size, scores, histories, settings):
         ax.set(
             xlabel="# of Epochs",
             ylabel="Architecture: {0}\nTrain Score: {1} | Test Score: {2}".format(
-                settings["model_architectures"][row],
+                settings["MODEL_ARCHITECTURES"][row],
                 np.round(scores[row]["train"], 3),
                 np.round(scores[row]["test"], 3),
             ),
@@ -232,9 +236,9 @@ def plot_training_results(vehicle, sample_size, scores, histories, settings):
     plt.show()
     fig.savefig(
         "../../../Google Drive/Academia/PhD Thesis/Modeling Outputs/{0}/{1} - {2}/{3} - Training Result.jpg".format(
-            settings["output_type"],
-            settings["output_index"],
-            settings["model_structure"],
+            settings["OUTPUT_TYPE"],
+            settings["OUTPUT_INDEX"],
+            settings["MODEL_STRUCTURE"],
             vehicle,
         ),
         dpi=300,
@@ -247,25 +251,25 @@ def plot_training_results(vehicle, sample_size, scores, histories, settings):
 # ### Plot predictions vs. ground-truth and save plot to file
 def plot_accuracy(df, vehicle, sample_size, scores, settings):
     fig, axn = plt.subplots(
-        len(settings["model_architectures"]),
+        len(settings["MODEL_ARCHITECTURES"]),
         1,
-        figsize=(5, 5 * len(settings["model_architectures"])),
+        figsize=(5, 5 * len(settings["MODEL_ARCHITECTURES"])),
         constrained_layout=True,
     )
     fig.suptitle(
         "Experiment: {0}\nSample Size: {1}\n# of Epochs: {2}".format(
-            vehicle, sample_size, settings["n_epochs"]
+            vehicle, sample_size, settings["N_EPOCHS"]
         ),
         fontsize=18,
     )
     for index, ax in enumerate(axn.flat):
         predicted_temp = "{0}_({1},{2})".format(
-            settings["predicted"],
-            settings["model_architectures"][index][0],
-            settings["model_architectures"][index][1],
+            settings["PREDICTED"],
+            settings["MODEL_ARCHITECTURES"][index][0],
+            settings["MODEL_ARCHITECTURES"][index][1],
         )
         sns.regplot(
-            x=settings["dependent"],
+            x=settings["DEPENDENT"],
             y=predicted_temp,
             data=df,
             fit_reg=True,
@@ -275,14 +279,14 @@ def plot_accuracy(df, vehicle, sample_size, scores, settings):
             ci=None,
         )
         ax.set(
-            xlabel=settings["labels"][settings["dependent"]],
-            ylabel=settings["labels"][settings["predicted"]],
+            xlabel=settings["labels"][settings["DEPENDENT"]],
+            ylabel=settings["labels"][settings["PREDICTED"]],
         )
         ax.set_xlim(0)
         ax.set_ylim(0)
         ax.set_title(
             "Architecture: {0}\nTrain Score: {1} | Test Score: {2}".format(
-                settings["model_architectures"][index],
+                settings["MODEL_ARCHITECTURES"][index],
                 np.round(scores[index]["train"], 3),
                 np.round(scores[index]["test"], 3),
             )
@@ -290,9 +294,9 @@ def plot_accuracy(df, vehicle, sample_size, scores, settings):
     plt.show()
     fig.savefig(
         "../../../Google Drive/Academia/PhD Thesis/Modeling Outputs/{0}/{1} - {2}/{3} - Observed vs. Predicted.jpg".format(
-            settings["output_type"],
-            settings["output_index"],
-            settings["model_structure"],
+            settings["OUTPUT_TYPE"],
+            settings["OUTPUT_INDEX"],
+            settings["MODEL_STRUCTURE"],
             vehicle,
         ),
         dpi=300,
@@ -303,15 +307,19 @@ def plot_accuracy(df, vehicle, sample_size, scores, settings):
 
 #%% [markdown]
 # ### Save the predicted field back to Excel file
-def save_back_to_Excel(df, vehicle, settings):
-    directory = "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/" + vehicle + "/Processed/"
+def save_to_excel(df, vehicle, settings):
+    directory = (
+        "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
+        + vehicle
+        + "/Processed/"
+    )
     output_file = vehicle + " - {0} - {1}.xlsx".format(
-        settings["output_type"], settings["output_index"]
+        settings["OUTPUT_TYPE"], settings["OUTPUT_INDEX"]
     )
     output_path = directory + output_file
     with pd.ExcelWriter(output_path, engine="openpyxl", mode="w") as writer:
         df.to_excel(writer, header=True, index=None)
-    print("Data is saved to Excel successfully!")
+    print("{0} -> Data is saved to Excel successfully!".format(vehicle))
     return None
 
 
@@ -319,7 +327,7 @@ def save_back_to_Excel(df, vehicle, settings):
 # ### General settings
 plt.style.use("bmh")
 pd.options.mode.chained_assignment = None
-EXPERIMENTS = [
+EXPERIMENTS = (
     "009 Renault Logan 2014 (1.6L Manual)",
     "010 JAC J5 2015 (1.8L Auto)",
     "011 JAC S5 2017 (2.0L TC Auto)",
@@ -355,21 +363,21 @@ EXPERIMENTS = [
     "041 Nissan Micra 2019 (1.6L Auto)",
     "042 Nissan Rouge 2020 (2.5L Auto)",
     "043 Mazda CX-3 2019 (2.0L Auto)",
-]
+)
 
 #%% [markdown]
 # ### ANN settings
 SETTINGS = {
-    "dependent": "FCR_LH",
-    "predicted": "FCR_LH_PRED",
-    "features": ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG", "RPM_PRED"],
-    "lagged_features": ["SPD_KH", "NO_OUTLIER_GRADE_DEG"],
-    "lag_order": 1,
-    "max_sample_size": 5400,
-    "test_split_ratio": 0.20,
-    "n_epochs": 200,
-    "drop_prop": 0.1,
-    "labels": {
+    "DEPENDENT": "FCR_LH",
+    "PREDICTED": "FCR_LH_PRED",
+    "FEATURES": ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG", "RPM_PRED"],
+    "LAGGED_FEATURES": ["SPD_KH", "NO_OUTLIER_GRADE_DEG"],
+    "LAG_ORDER": 1,
+    "MAX_SAMPLE_SIZE": 5400,
+    "TEST_SPLIT_RATIO": 0.20,
+    "N_EPOCHS": 200,
+    "DROP_PROP": 0.1,
+    "LABELS": {
         "FCR_LH": "Observed Fuel Consumption Rate (L/H)",
         "FCR_LH_PRED": "Predicted Fuel Consumption Rate (L/H)",
         "RPM": "Observed Engine Speed (rev/min)",
@@ -378,19 +386,19 @@ SETTINGS = {
         "ACC_MS2": "Acceleration (m/s2)",
         "NO_OUTLIER_GRADE_DEG": "Road Grade (Deg)",
     },
-    "model_structure": "FCR ~ SPD + SPD_L1 + ACC + GRADE + GRADE_L1 + RPM_PRED",
-    "model_architectures": [(1, 128), (2, 64), (4, 32), (8, 16)],
-    "learning_rate": 0.001,
-    "metrics": [
+    "MODEL_STRUCTURE": "FCR ~ SPD + SPD_L1 + ACC + GRADE + GRADE_L1 + RPM_PRED",
+    "MODEL_ARCHITECTURES": [(1, 128), (2, 64), (4, 32), (8, 16)],
+    "LEARNING_RATE": 0.001,
+    "METRICS": [
         "mean_squared_error",
         "mean_absolute_error",
         "mean_absolute_percentage_error",
         "cosine_proximity",
     ],
-    "input_type": "ANN",
-    "output_type": "ANN",
-    "input_index": "17",
-    "output_index": "19",
+    "INPUT_TYPE": "ANN",
+    "OUTPUT_TYPE": "ANN",
+    "INPUT_INDEX": "17",
+    "OUTPUT_INDEX": "19",
     "RPM_BEST_ARCHS": [
         "(1,128)",
         "(2,64)",
@@ -438,4 +446,4 @@ for index, vehicle in enumerate(EXPERIMENTS):
     # Plot predictions vs. ground-truth and save plot to file
     plot_accuracy(df, vehicle, sample_size, scores, SETTINGS)
     # Save the predicted field back to Excel file
-    save_back_to_Excel(df, vehicle, SETTINGS)
+    save_to_excel(df, vehicle, SETTINGS)
