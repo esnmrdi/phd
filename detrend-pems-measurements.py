@@ -8,6 +8,7 @@ import pandas as pd
 import obspy
 import matplotlib.pyplot as plt
 import seaborn as sns
+import datetime as dt
 from obspy.signal.detrend import polynomial
 
 #%% [markdown]
@@ -21,7 +22,7 @@ def load_from_Excel(vehicle, device, settings):
         + "/Processed/"
     )
     input_file = vehicle + " - {0} - {1}.xlsx".format(
-        settings[device]["input_type"], settings[device]["input_index"]
+        settings[device]["INPUT_TYPE"], settings[device]["INPUT_INDEX"]
     )
     input_path = directory + input_file
     sheets_dict = pd.read_excel(input_path, sheet_name=None, header=0)
@@ -37,34 +38,34 @@ def detrend(df, cols, vehicle, device, settings):
     detrended_df = pd.DataFrame()
     fig, axn = plt.subplots(2, 1, figsize=(10, 10))
     fig.suptitle("Experiment: {0}".format(vehicle), fontsize=18)
-    df_segments = df.groupby("SHEET_PEMS")
+    df_segments = df.groupby("SEGMENT_ID")
     print(len(df_segments))
     mean = dict()
     for index, (_, segment) in enumerate(df_segments):
-        if settings["mean_shift_target_segment"] == index:
+        if settings["MEAN_SHIFT_TARGET_SEGMENT"] == index:
             for col in cols:
-                if settings["mean_shift_from_the_end"]:
+                if settings["MEAN_SHIFT_FROM_THE_END"]:
                     mean[col] = segment[col][-1800:].mean()
                 else:
                     mean[col] = segment[col][:1800].mean()
     for _, segment in df_segments:
         for col in cols:
-            polynomial(segment[col], order=settings["detrending_order"])
-            if settings["mean_shift"]:
+            polynomial(segment[col], order=settings["DETRENDING_ORDER"])
+            if settings["MEAN_SHIFT"]:
                 segment[col] += mean[col]
             segment[col][segment[col] < 0] = 0
         detrended_df = detrended_df.append(segment)
     for ax, col in zip(axn, cols):
-        if settings["plot_original"]:
+        if settings["PLOT_ORIGINAL"]:
             sns.lineplot(data=df[col], ax=ax, label="Original", ci=None)
-        if settings["plot_detrended"]:
+        if settings["PLOT_DETRENDED"]:
             sns.lineplot(data=detrended_df[col], ax=ax, label="Detrended", ci=None)
         ax.legend(loc="best")
         ax.set_title(col)
     plt.show()
     fig.savefig(
         "../../../Google Drive/Academia/PhD Thesis/Modeling Outputs/{0}/{1} - Detrended PM and PN.jpg".format(
-            settings[device]["output_type"], vehicle
+            settings[device]["OUTPUT_TYPE"], vehicle
         ),
         dpi=300,
         quality=95,
@@ -75,7 +76,7 @@ def detrend(df, cols, vehicle, device, settings):
 
 #%% [markdown]
 # ### Save the detrended measurements back to Excel file
-def save_back_to_Excel(df, vehicle, device, settings):
+def save_to_excel(df, vehicle, device, settings):
     directory = (
         "../../../Google Drive/Academia/PhD Thesis/Field Experiments/"
         + device
@@ -84,14 +85,14 @@ def save_back_to_Excel(df, vehicle, device, settings):
         + "/Processed/"
     )
     output_file = vehicle + " - {0} - {1}.xlsx".format(
-        settings[device]["output_type"], settings[device]["output_index"]
+        settings[device]["OUTPUT_TYPE"], settings[device]["OUTPUT_INDEX"]
     )
     output_path = directory + output_file
     with pd.ExcelWriter(output_path, engine="openpyxl", mode="w") as writer:
         df.to_excel(
             writer, sheet_name="With Detrended PM and PN", header=True, index=None
         )
-    print("{0} saved to Excel successfully!".format(vehicle))
+    print("{0} -> Data is saved to Excel successfully!".format(vehicle))
     return None
 
 
@@ -123,17 +124,17 @@ EXPERIMENTS = (
 # ### Detrend settings
 SETTINGS = {
     "3DATX parSYNC Plus": {
-        "input_type": "NONE",
-        "input_index": "01",
-        "output_type": "NONE",
-        "output_index": "02",
+        "INPUT_TYPE": "NONE",
+        "INPUT_INDEX": "01",
+        "OUTPUT_TYPE": "NONE",
+        "OUTPUT_INDEX": "02",
     },
-    "detrending_order": 10,
-    "mean_shift": True,
-    "mean_shift_from_the_end": True,
-    "mean_shift_target_segment": 0,
-    "plot_original": True,
-    "plot_detrended": True,
+    "DETRENDING_ORDER": 10,
+    "MEAN_SHIFT": True,
+    "MEAN_SHIFT_FROM_THE_END": True,
+    "MEAN_SHIFT_TARGET_SEGMENT": 0,
+    "PLOT_ORIGINAL": True,
+    "PLOT_DETRENDED": True,
 }
 
 #%% [markdown]
@@ -144,7 +145,7 @@ for vehicle in EXPERIMENTS:
     # Detrend PEMS measurements
     df = detrend(df, ["PM_MGM3", "PN_#CM3"], vehicle, "3DATX parSYNC Plus", SETTINGS)
     # Save the detrended measurements back to Excel file
-    save_back_to_Excel(df, vehicle, "3DATX parSYNC Plus", SETTINGS)
+    save_to_excel(df, vehicle, "3DATX parSYNC Plus", SETTINGS)
 
 
 # %%
