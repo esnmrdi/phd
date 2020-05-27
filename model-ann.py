@@ -1,9 +1,11 @@
-#%% [markdown]
-# ## Artificial Neural Network for RPM and FCR Prediction
-# ### Ehsan Moradi, Ph.D. Candidate
+# %%
+# Artificial Neural Network for RPM and FCR Prediction
+# Ehsan Moradi, Ph.D. Candidate
 
-#%% [markdown]
-# ### Load required libraries
+# pylint: disable=abstract-class-instantiated
+
+# %%
+# Load required libraries
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -14,8 +16,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
 
 
-#%% [markdown]
-# ### Display training progress
+# %%
+# Display training progress
 class ReportProgress(tf.keras.callbacks.Callback):
     def __init__(self, df, test_split_ratio, n_epochs):
         self.df = df
@@ -39,8 +41,8 @@ class ReportProgress(tf.keras.callbacks.Callback):
         print("Training finished.")
 
 
-#%% [markdown]
-# ### Load sample data from Excel to a pandas dataframe
+# %%
+# Load sample data from Excel to a pandas dataframe
 def load_sample_from_Excel(vehicle, settings):
     directory = (
         "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
@@ -64,8 +66,8 @@ def load_sample_from_Excel(vehicle, settings):
     return df, sample_size
 
 
-#%% [markdown]
-# ### Add lagged features to the dataframe
+# %%
+# Add lagged features to the dataframe
 def add_lagged_features(df, settings, index):
     df_temp = df.copy()
     total_features = settings["FEATURES"]
@@ -84,8 +86,8 @@ def add_lagged_features(df, settings, index):
     return df_temp, total_features
 
 
-#%% [markdown]
-# ### Scale the features
+# %%
+# Scale the features
 def scale(df, total_features, settings):
     df_temp = df.copy()
     feature_names = total_features + [settings["DEPENDENT"]]
@@ -94,16 +96,16 @@ def scale(df, total_features, settings):
     return df_temp, scaler
 
 
-#%% [markdown]
-# ### Reverse-scale the features
+# %%
+# Reverse-scale the features
 def reverse_scale(df, scaler):
     df_temp = df.copy()
     df_temp = np.sqrt(scaler.var_[-1]) * df_temp + scaler.mean_[-1]
     return df_temp
 
 
-#%% [markdown]
-# ### Define alternative ANN models with different architectures
+# %%
+# Define alternative ANN models with different architectures
 def define_models(total_features, settings):
     n_features = len(total_features)
     models = []
@@ -123,8 +125,8 @@ def define_models(total_features, settings):
     return models
 
 
-#%% [markdown]
-# ### Report the train and test score
+# %%
+# Report the train and test score
 def calculate_score(model, train_set, test_set, total_features, settings):
     train_set[settings["PREDICTED"]] = model.predict(train_set[total_features])
     test_set[settings["PREDICTED"]] = model.predict(test_set[total_features])
@@ -137,8 +139,8 @@ def calculate_score(model, train_set, test_set, total_features, settings):
     return score
 
 
-#%% [markdown]
-# ### Tune the ANN model by testing alternative architectures (from shallow and wide to deep and narrow)
+# %%
+# Tune the ANN model by testing alternative architectures (from shallow and wide to deep and narrow)
 def tune_ann(df, total_features, scaler, settings):
     df_temp = df.copy()
     models = define_models(total_features, settings)
@@ -185,8 +187,8 @@ def tune_ann(df, total_features, scaler, settings):
     return df_temp, scores, histories
 
 
-#%% [markdown]
-# ### Plot training history and save plot to file
+# %%
+# Plot training history and save plot to file
 def plot_training_results(vehicle, sample_size, scores, histories, settings):
     fig, axn = plt.subplots(
         len(settings["MODEL_ARCHITECTURES"]),
@@ -247,8 +249,8 @@ def plot_training_results(vehicle, sample_size, scores, histories, settings):
     )
 
 
-#%% [markdown]
-# ### Plot predictions vs. ground-truth and save plot to file
+# %%
+# Plot predictions vs. ground-truth and save plot to file
 def plot_accuracy(df, vehicle, sample_size, scores, settings):
     fig, axn = plt.subplots(
         len(settings["MODEL_ARCHITECTURES"]),
@@ -305,8 +307,8 @@ def plot_accuracy(df, vehicle, sample_size, scores, settings):
     )
 
 
-#%% [markdown]
-# ### Save the predicted field back to Excel file
+# %%
+# Save the predicted field back to Excel file
 def save_to_excel(df, vehicle, settings):
     directory = (
         "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
@@ -323,8 +325,8 @@ def save_to_excel(df, vehicle, settings):
     return None
 
 
-#%% [markdown]
-# ### General settings
+# %%
+# General settings
 plt.style.use("bmh")
 pd.options.mode.chained_assignment = None
 EXPERIMENTS = (
@@ -343,7 +345,7 @@ EXPERIMENTS = (
     "021 Chevrolet N300 2014 (1.2L Manual)",
     "022 Chevrolet Spark GT 2012 (1.2L Manual)",
     "023 Mazda 2 2012 (1.4L Auto)",
-    "024 Renault Logan 2010 (1.4 L Manual)",
+    "024 Renault Logan 2010 (1.4L Manual)",
     "025 Chevrolet Captiva 2010 (2.4L Auto)",
     "026 Nissan Versa 2013 (1.6L Auto)",
     "027 Chevrolet Cruze 2011 (1.8L Manual)",
@@ -365,8 +367,8 @@ EXPERIMENTS = (
     "043 Mazda CX-3 2019 (2.0L Auto)",
 )
 
-#%% [markdown]
-# ### ANN settings
+# %%
+# ANN settings
 SETTINGS = {
     "DEPENDENT": "FCR_LH",
     "PREDICTED": "FCR_LH_PRED",
@@ -430,8 +432,8 @@ SETTINGS = {
     ],
 }
 
-#%% [markdown]
-# ### Batch execution on all vehicles and their trips
+# %%
+# Batch execution on all vehicles and their trips
 for index, vehicle in enumerate(EXPERIMENTS):
     # Add lagged features to the dataframe and sampling
     df, sample_size = load_sample_from_Excel(vehicle, SETTINGS)

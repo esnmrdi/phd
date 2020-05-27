@@ -1,14 +1,16 @@
-#%% [markdown]
-# ## Prepare link drive shedule and links files for MOVES analyses (fuel)
-# ### Ehsan Moradi, Ph.D. Candidate
+# %%
+# Prepare link drive shedule and links files for MOVES analyses (fuel)
+# Ehsan Moradi, Ph.D. Candidate
 
-#%% [markdown]
-# ### Load required packages
+# pylint: disable=abstract-class-instantiated
+
+# %%
+# Load required packages
 import pandas as pd
 import numpy as np
 
-#%% [markdown]
-# ### Load data from Excel to a pandas dataframe
+# %%
+# Load data from Excel to a pandas dataframe
 def load_from_Excel(vehicle, settings):
     directory = (
         "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
@@ -26,19 +28,19 @@ def load_from_Excel(vehicle, settings):
     return df
 
 
-#%% [markdown]
-# ### Generate link drive schedule dataframe
+# %%
+# Generate link drive schedule dataframe
 def generate_schedule(df):
     schedule = pd.DataFrame()
     schedule["linkID"] = df["LINK_ID"]
     schedule["secondID"] = df.groupby("LINK_ID").cumcount() + 1
     schedule["speed"] = round(0.621371 * df["SPD_KH"], 1)
-    schedule["grade"] = round(np.tan(df["NO_OUTLIER_GRADE_DEG"]), 1)
+    schedule["grade"] = round(np.tan(np.radians(df["NO_OUTLIER_GRADE_DEG"])) * 100, 1)
     return schedule
 
 
-#%% [markdown]
-# ### Generate links dataframe
+# %%
+# Generate links dataframe
 def generate_links(df):
     links = pd.DataFrame()
     link_ids = df.LINK_ID.unique()
@@ -54,14 +56,14 @@ def generate_links(df):
         ]
         new_row["linkAvgSpeed"] = [round(df_slice["SPD_KH"].mean() * 0.621371, 1)]
         new_row["linkAvgGrade"] = [
-            round(np.tan(df_slice["NO_OUTLIER_GRADE_DEG"].mean()), 1)
+            round(np.tan(np.radians(df_slice["NO_OUTLIER_GRADE_DEG"].mean())) * 100, 1)
         ]
         links = links.append(new_row)
     return links
 
 
-#%% [markdown]
-# ### Save the link drive schedule and links dataframes back to Excel files split based on 1-hour time slots
+# %%
+# Save the link drive schedule and links dataframes back to Excel files split based on 1-hour time slots
 def save_to_Excel(schedule, links, datetime_tag, vehicle, settings):
     directory = (
         "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
@@ -76,16 +78,22 @@ def save_to_Excel(schedule, links, datetime_tag, vehicle, settings):
     )
     output_path_schedule = directory + output_file_schedule
     output_path_links = directory + output_file_links
-    with pd.ExcelWriter(output_path_schedule, engine="openpyxl", mode="w") as writer:
-        schedule.to_excel(writer, header=True, index=None, sheet_name="driveScheduleSecondLink")
-    with pd.ExcelWriter(output_path_links, engine="openpyxl", mode="w") as writer:
+    with pd.ExcelWriter(
+        output_path_schedule, engine="openpyxl", mode="w"
+    ) as writer:  # pylint: disable=abstract-class-instantiated
+        schedule.to_excel(
+            writer, header=True, index=None, sheet_name="driveScheduleSecondLink"
+        )
+    with pd.ExcelWriter(
+        output_path_links, engine="openpyxl", mode="w"
+    ) as writer:  # pylint: disable=abstract-class-instantiated
         links.to_excel(writer, header=True, index=None, sheet_name="link")
     print("{0} -> Data is saved to Excel successfully!".format(vehicle))
     return None
 
 
-#%% [markdown]
-# ### General settings
+# %%
+# General settings
 pd.options.mode.chained_assignment = None
 EXPERIMENTS = (
     "009 Renault Logan 2014 (1.6L Manual)",
@@ -103,7 +111,7 @@ EXPERIMENTS = (
     "021 Chevrolet N300 2014 (1.2L Manual)",
     "022 Chevrolet Spark GT 2012 (1.2L Manual)",
     "023 Mazda 2 2012 (1.4L Auto)",
-    "024 Renault Logan 2010 (1.4 L Manual)",
+    "024 Renault Logan 2010 (1.4L Manual)",
     "025 Chevrolet Captiva 2010 (2.4L Auto)",
     "026 Nissan Versa 2013 (1.6L Auto)",
     "027 Chevrolet Cruze 2011 (1.8L Manual)",
@@ -125,8 +133,8 @@ EXPERIMENTS = (
     "043 Mazda CX-3 2019 (2.0L Auto)",
 )
 
-#%% [markdown]
-# ### Reverse Geo-Code Settings
+# %%
+# Reverse Geo-Code Settings
 SETTINGS = {
     "INPUT_TYPE": "NONE",
     "OUTPUT_TYPE": "NONE",
@@ -135,8 +143,8 @@ SETTINGS = {
     "OUTPUT_INDEX_LINKS": "06",
 }
 
-#%% [markdown]
-# ### Batch execution on all vehicles and their trips
+# %%
+# Batch execution on all vehicles and their trips
 for vehicle in EXPERIMENTS:
     # Load data from Excel to a pandas dataframe
     df = load_from_Excel(vehicle, SETTINGS)
@@ -150,7 +158,9 @@ for vehicle in EXPERIMENTS:
             # Generate links dataframe
             links = generate_links(group)
             # Save the transformed data back to Excel file
-            save_to_Excel(schedule, links, tag.strftime("%Y-%m-%d %I%p"), vehicle, SETTINGS)
+            save_to_Excel(
+                schedule, links, tag.strftime("%Y-%m-%d %I%p"), vehicle, SETTINGS
+            )
 
 
 # %%

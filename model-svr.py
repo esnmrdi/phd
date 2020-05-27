@@ -1,9 +1,11 @@
-#%% [markdown]
-# ## Support Vector Regression for FCR Prediction
-# ### Ehsan Moradi, Ph.D. Candidate
+# %%
+# Support Vector Regression for FCR Prediction
+# Ehsan Moradi, Ph.D. Candidate
 
-#%% [markdown]
-# ### Load required libraries
+# pylint: disable=abstract-class-instantiated
+
+# %%
+# Load required libraries
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -13,8 +15,8 @@ from sklearn.model_selection import GridSearchCV, KFold
 from sklearn import preprocessing
 from sklearn.metrics.pairwise import rbf_kernel, linear_kernel, polynomial_kernel
 
-#%% [markdown]
-# ### Load sample data from Excel to a pandas dataframe
+# %%
+# Load sample data from Excel to a pandas dataframe
 def load_sample_from_Excel(vehicle, settings):
     directory = (
         "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
@@ -38,8 +40,8 @@ def load_sample_from_Excel(vehicle, settings):
     return df, sample_size
 
 
-#%% [markdown]
-# ### Add lagged features to the dataframe
+# %%
+# Add lagged features to the dataframe
 def add_lagged_features(df, settings, index):
     df_temp = df.copy()
     total_features = [
@@ -57,8 +59,8 @@ def add_lagged_features(df, settings, index):
     return df_temp, total_features
 
 
-#%% [markdown]
-# ### Scale the features
+# %%
+# Scale the features
 def scale(df, total_features, settings):
     df_temp = df.copy()
     feature_names = total_features + [settings["DEPENDENT"]]
@@ -67,16 +69,16 @@ def scale(df, total_features, settings):
     return df_temp, scaler
 
 
-#%% [markdown]
-# ### Reverse-scale the features
+# %%
+# Reverse-scale the features
 def reverse_scale(df, scaler):
     df_temp = df.copy()
     df_temp = np.sqrt(scaler.var_[-1]) * df_temp + scaler.mean_[-1]
     return df_temp
 
 
-#%% [markdown]
-# ### RBF and Linear, Multiplicative Kernel
+# %%
+# RBF and Linear, Multiplicative Kernel
 def build_rbf_lin_mul(**kwargs):
     def rbf_lin_mul(x, y):
         k1 = linear_kernel(x, y)
@@ -86,8 +88,8 @@ def build_rbf_lin_mul(**kwargs):
     return rbf_lin_mul
 
 
-#%% [markdown]
-# ### RBF and Linear, Linear Combination Kernel
+# %%
+# RBF and Linear, Linear Combination Kernel
 def build_rbf_lin_lin(**kwargs):
     def rbf_lin_lin(x, y):
         k1 = linear_kernel(x, y)
@@ -97,8 +99,8 @@ def build_rbf_lin_lin(**kwargs):
     return rbf_lin_lin
 
 
-#%% [markdown]
-# ### RBF and Polynomial, Multiplicative Kernel
+# %%
+# RBF and Polynomial, Multiplicative Kernel
 def build_rbf_pol_mul(**kwargs):
     def rbf_pol_mul(x, y):
         k1 = polynomial_kernel(x, y, kwargs["degree"], kwargs["gamma"])
@@ -108,8 +110,8 @@ def build_rbf_pol_mul(**kwargs):
     return rbf_pol_mul
 
 
-#%% [markdown]
-# ### RBF and Polynomial, Linear Combination Kernel
+# %%
+# RBF and Polynomial, Linear Combination Kernel
 def build_rbf_pol_lin(**kwargs):
     def rbf_pol_lin(x, y):
         k1 = polynomial_kernel(x, y, kwargs["degree"], kwargs["gamma"])
@@ -119,8 +121,8 @@ def build_rbf_pol_lin(**kwargs):
     return rbf_pol_lin
 
 
-#%% [markdown]
-# ### Tune the SVR model using grid search and cross validation
+# %%
+# Tune the SVR model using grid search and cross validation
 def tune_svr(df, total_features, scaler, settings):
     df_temp = df.copy()
     cv = KFold(n_splits=settings["N_SPLITS"], shuffle=True)
@@ -140,8 +142,8 @@ def tune_svr(df, total_features, scaler, settings):
     return df_temp, clf.best_score_, clf.best_estimator_, clf.cv_results_
 
 
-#%% [markdown]
-# ### Plot the grid search results and save plot to file
+# %%
+# Plot the grid search results and save plot to file
 def plot_grid_search_results(vehicle, sample_size, best_score, cv_results, settings):
     results = pd.DataFrame()
     results["epsilon"] = cv_results["param_epsilon"]
@@ -194,8 +196,8 @@ def plot_grid_search_results(vehicle, sample_size, best_score, cv_results, setti
     )
 
 
-#%% [markdown]
-# ### Plot predictions vs. ground-truth and save plot to file
+# %%
+# Plot predictions vs. ground-truth and save plot to file
 def plot_accuracy(df, vehicle, sample_size, best_score, settings):
     fig, ax = plt.subplots(1, 1, figsize=(6, 6), constrained_layout=True)
     ax = sns.regplot(
@@ -233,8 +235,8 @@ def plot_accuracy(df, vehicle, sample_size, best_score, settings):
     )
 
 
-#%% [markdown]
-# ### Save the predicted field back to Excel file
+# %%
+# Save the predicted field back to Excel file
 def save_to_excel(df, vehicle, settings):
     directory = (
         "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
@@ -245,14 +247,16 @@ def save_to_excel(df, vehicle, settings):
         settings["OUTPUT_TYPE"], settings["OUTPUT_INDEX"]
     )
     output_path = directory + output_file
-    with pd.ExcelWriter(output_path, engine="openpyxl", mode="w") as writer:
+    with pd.ExcelWriter(
+        output_path, engine="openpyxl", mode="w"
+    ) as writer:  # pylint: disable=abstract-class-instantiated
         df.to_excel(writer, header=True, index=None)
     print("{0} -> Data is saved to Excel successfully!".format(vehicle))
     return None
 
 
-#%% [markdown]
-# ### General settings
+# %%
+# General settings
 plt.style.use("bmh")
 pd.options.mode.chained_assignment = None
 EXPERIMENTS = (
@@ -271,7 +275,7 @@ EXPERIMENTS = (
     "021 Chevrolet N300 2014 (1.2L Manual)",
     "022 Chevrolet Spark GT 2012 (1.2L Manual)",
     "023 Mazda 2 2012 (1.4L Auto)",
-    "024 Renault Logan 2010 (1.4 L Manual)",
+    "024 Renault Logan 2010 (1.4L Manual)",
     "025 Chevrolet Captiva 2010 (2.4L Auto)",
     "026 Nissan Versa 2013 (1.6L Auto)",
     "027 Chevrolet Cruze 2011 (1.8L Manual)",
@@ -294,8 +298,8 @@ EXPERIMENTS = (
 )
 
 
-#%% [markdown]
-# ### SVR settings
+# %%
+# SVR settings
 SETTINGS = {
     "DEPENDENT": "FCR_LH",
     "PREDICTED": "FCR_LH_PRED",
@@ -354,8 +358,8 @@ SETTINGS = {
     ],
 }
 
-#%% [markdown]
-# ### Batch execution on all vehicles and their trips
+# %%
+# Batch execution on all vehicles and their trips
 for index, vehicle in enumerate(EXPERIMENTS):
     # Add lagged features to the dataframe and sampling
     df, sample_size = load_sample_from_Excel(vehicle, SETTINGS)

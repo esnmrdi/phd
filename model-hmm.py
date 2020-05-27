@@ -1,9 +1,11 @@
-#%% [markdown]
-# ## Hidden Markov Model
-# ### Ehsan Moradi, Ph.D. Candidate
+# %%
+# Hidden Markov Model
+# Ehsan Moradi, Ph.D. Candidate
 
-#%% [markdown]
-# ### Load required libraries
+# pylint: disable=abstract-class-instantiated
+
+# %%
+# Load required libraries
 import json
 import numpy as np
 import pandas as pd
@@ -30,8 +32,8 @@ from bokeh.models import (
 output_notebook()
 
 
-#%% [markdown]
-# ### Load data from Excel to a pandas dataframe
+# %%
+# Load data from Excel to a pandas dataframe
 def load_from_Excel(vehicle, trip):
     directory = (
         "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
@@ -44,16 +46,16 @@ def load_from_Excel(vehicle, trip):
     return df
 
 
-#%% [markdown]
-# ### Feature scaling
+# %%
+# Feature scaling
 def scale(df, feature_names):
     scaler = preprocessing.StandardScaler().fit(df[feature_names])
     df[feature_names] = scaler.transform(df[feature_names])
     return df, scaler
 
 
-#%% [markdown]
-# ### Discretize features by rounding to specific scales
+# %%
+# Discretize features by rounding to specific scales
 def discretize(df, feature_name, scale):
     df[feature_name] *= scale
     df[feature_name] = df[feature_name].round()
@@ -61,8 +63,8 @@ def discretize(df, feature_name, scale):
     return df
 
 
-#%% [markdown]
-# ### Set and fit the Hidden Markov Model on data
+# %%
+# Set and fit the Hidden Markov Model on data
 def hmm(df, emissions, n_states, algorithm):
     model = HiddenMarkovModel.from_samples(
         distribution=MultivariateGaussianDistribution,
@@ -74,8 +76,8 @@ def hmm(df, emissions, n_states, algorithm):
     return model
 
 
-#%% [markdown]
-# ### Plot feature in times-series format
+# %%
+# Plot feature in times-series format
 def plot_feature(df, feature_name, vehicle, trip):
     source = ColumnDataSource(df)
     datetime = EXPERIMENTS[vehicle][trip]
@@ -93,8 +95,8 @@ def plot_feature(df, feature_name, vehicle, trip):
     return None
 
 
-#%% [markdown]
-# ### Plot histogram and normality check
+# %%
+# Plot histogram and normality check
 def plot_histogram(df, feature_name):
     d = GaussianKernelDensity(df[feature_name], bandwidth=2)
     d.plot(
@@ -106,8 +108,8 @@ def plot_histogram(df, feature_name):
     )
 
 
-#%% [markdown]
-# ### Save the calculated field back in Excel file
+# %%
+# Save the calculated field back in Excel file
 def save_to_excel(df, vehicle, trip):
     directory = (
         "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
@@ -129,8 +131,8 @@ def save_to_excel(df, vehicle, trip):
     return None
 
 
-#%% [markdown]
-# ### General Settings
+# %%
+# General Settings
 pd.options.mode.chained_assignment = None
 EXPERIMENTS = {
     "009 Renault Logan 2014 (1.6L Manual)": [
@@ -232,7 +234,7 @@ EXPERIMENTS = {
         "04-20-2019 14.32.16",
         "04-20-2019 15.10.33",
     ],
-    "024 Renault Logan 2010 (1.4 L Manual)": ["04-23-2019 15.09.17"],
+    "024 Renault Logan 2010 (1.4L Manual)": ["04-23-2019 15.09.17"],
     "025 Chevrolet Captiva 2010 (2.4L Auto)": [
         "04-30-2019 10.46.01",
         "04-30-2019 13.06.58",
@@ -276,8 +278,8 @@ EXPERIMENTS = {
 }
 EMISSIONS = ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG"]
 
-#%% [markdown]
-# ### Batch execution on all vehicles and their trips
+# %%
+# Batch execution on all vehicles and their trips
 for vehicle, trips in EXPERIMENTS.items():
     for trip, label in enumerate(trips):
         # Load data corresponding to vehicle and trip into a dataframe

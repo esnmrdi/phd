@@ -1,21 +1,24 @@
-#%% [markdown]
-# ## 1D Convolutional Neural Network for Fuel Consumption and Emissions Rate Estimation
-# ### Ehsan Moradi, Ph.D. Candidate
+# %%
+# 1D Convolutional Neural Network for Fuel Consumption and Emissions Rate Estimation
+# Ehsan Moradi, Ph.D. Candidate
 
-#%% [markdown]
-# ### Load required libraries
+# pylint: disable=abstract-class-instantiated
+
+# %%
+# Load required libraries
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 import tensorflow as tf
 from sklearn import preprocessing
 
-#%% [markdown]
-# ### Load data from Excel to a pandas dataframe
+
+# %%
+# Load data from Excel to a pandas dataframe
 def load_from_Excel(vehicle, settings):
     directory = (
-        "../../../Google Drive/Academia/PhD Thesis/Field Experiments/3DATX parSYNC Plus/"
+        "../../../Google Drive/Academia/PhD Thesis/Field Experiments/"
+        + "3DATX parSYNC Plus/"
         + vehicle
         + "/Processed/"
     )
@@ -30,8 +33,8 @@ def load_from_Excel(vehicle, settings):
     return df
 
 
-#%% [markdown]
-# ### Scale the features
+# %%
+# Scale the features
 def scale(df, settings):
     df_temp = df.copy()
     variables = settings["FEATURES"].append(settings["DEPENDENT"])
@@ -40,16 +43,17 @@ def scale(df, settings):
     return df_temp, scaler
 
 
-#%% [markdown]
-# ### Reverse-scale the features
+# %%
+# Reverse-scale the features
 def reverse_scale(df, scaler):
     df_temp = df.copy()
     df_temp = np.sqrt(scaler.var_[-1]) * df_temp + scaler.mean_[-1]
     return df_temp
 
 
-#%% [markdown]
-# ### Define the 1-D CNN model (https://machinelearningmastery.com/how-to-develop-convolutional-neural-network-models-for-time-series-forecasting)
+# %%
+# Define the 1-D CNN model
+# https://machinelearningmastery.com/how-to-develop-convolutional-neural-network-models-for-time-series-forecasting
 def define_model(features, settings):
     model = tf.keras.Sequential()
     model.add(
@@ -69,8 +73,8 @@ def define_model(features, settings):
     return model
 
 
-#%% [markdown]
-# ### Save the predicted field back to Excel file
+# %%
+# Save the predicted field back to Excel file
 def save_to_excel(df, vehicle, settings):
     directory = (
         "../../../Google Drive/Academia/PhD Thesis/Field Experiments/3DATX parSYNC Plus/"
@@ -81,14 +85,16 @@ def save_to_excel(df, vehicle, settings):
         settings["OUTPUT_TYPE"], settings["OUTPUT_INDEX"]
     )
     output_path = directory + output_file
-    with pd.ExcelWriter(output_path, engine="openpyxl", mode="w") as writer:
+    with pd.ExcelWriter(
+        output_path, engine="openpyxl", mode="w"
+    ) as writer:
         df.to_excel(writer, header=True, index=None)
     print("Data is saved to Excel successfully!")
     return None
 
 
-#%% [markdown]
-# ### General settings
+# %%
+# General settings
 plt.style.use("bmh")
 pd.options.mode.chained_assignment = None
 EXPERIMENTS = (
@@ -112,8 +118,8 @@ EXPERIMENTS = (
 )
 EXPERIMENTS = ("015 VW Jetta 2016 (1.4L TC Auto)",)
 
-#%% [markdown]
-# ### CNN settings
+# %%
+# CNN settings
 SETTINGS = {
     "DEPENDENT": "FCR_LH",  # other dependents to work on are RPM, PM_mGM3, NO2_mGM3, NO_mGM3, and CO2_mGM3
     "FEATURES": ("SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG"),
@@ -145,8 +151,8 @@ SETTINGS = {
     "OUTPUT_INDEX": "04",
 }
 
-#%% [markdown]
-# ### Batch execution on all vehicles and their trips
+# %%
+# Batch execution on all vehicles and their trips
 for vehicle in EXPERIMENTS:
     # Load data from Excel to a pandas dataframe
     df = load_from_Excel(vehicle, SETTINGS)
