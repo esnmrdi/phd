@@ -117,11 +117,9 @@ def get_component(location, component_type):
 # Batch execution on all vehicles and their trips
 # For Google Geocoding API
 locator = GoogleV3(api_key=SETTINGS["GOOGLE_API_KEY"], timeout=100)
-# For OpenStreetMap
-# locator = Nominatim(user_agent="esn.mrd@gmail.com")
-# For Google Geocoding API
 rgeocode = RateLimiter(locator.reverse, min_delay_seconds=0.1)
 # For OpenStreetMap
+# locator = Nominatim(user_agent="esn.mrd@gmail.com")
 # rgeocode = RateLimiter(locator.reverse, min_delay_seconds=0.1)
 tqdm.pandas()
 for vehicle in EXPERIMENTS:
@@ -137,7 +135,6 @@ for vehicle in EXPERIMENTS:
         # d.raw["address"]["road"] if (d.raw["address"] and d.raw["address"]["road"]) else None for d in df["LOCATION"].progress_apply(rgeocode)
     ]
     # df = df.assign(LINK_ID=(df["LINK"]).astype("category").cat.codes)
-
     # Save the predicted field back to Excel file
     save_to_excel(df, vehicle, SETTINGS)
 
