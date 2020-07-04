@@ -2,7 +2,6 @@
 # Joining OBD and PEMS data
 # Ehsan Moradi, Ph.D. Candidate
 
-# pylint: disable=abstract-class-instantiated
 
 # %%
 # Load required libraries
@@ -45,7 +44,7 @@ def save_to_excel(joined_table, vehicle, device, settings):
     output_path = directory + output_file
     with pd.ExcelWriter(
         output_path, engine="openpyxl", mode="w"
-    ) as writer:  # pylint: disable=abstract-class-instantiated
+    ) as writer:
         joined_table.to_excel(
             writer, sheet_name="Joined Table", header=True, index=None
         )

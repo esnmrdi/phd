@@ -2,7 +2,6 @@
 # Calculate total experiment lengths (distance and duration) for each city
 # Ehsan Moradi, Ph.D. Candidate
 
-# pylint: disable=abstract-class-instantiated
 
 # %%
 # Load required libraries

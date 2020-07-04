@@ -4,7 +4,6 @@
 # https://www.sciencedirect.com/science/article/pii/S1361920911000782
 # Ehsan Moradi, Ph.D. Candidate
 
-# pylint: disable=abstract-class-instantiated
 
 # %%
 # Load required libraries

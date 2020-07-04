@@ -2,7 +2,6 @@
 # Prepare link drive shedule and links files for MOVES analyses (fuel)
 # Ehsan Moradi, Ph.D. Candidate
 
-# pylint: disable=abstract-class-instantiated
 
 # %%
 # Load required packages
@@ -80,13 +79,13 @@ def save_to_Excel(schedule, links, datetime_tag, vehicle, settings):
     output_path_links = directory + output_file_links
     with pd.ExcelWriter(
         output_path_schedule, engine="openpyxl", mode="w"
-    ) as writer:  # pylint: disable=abstract-class-instantiated
+    ) as writer:
         schedule.to_excel(
             writer, header=True, index=None, sheet_name="driveScheduleSecondLink"
         )
     with pd.ExcelWriter(
         output_path_links, engine="openpyxl", mode="w"
-    ) as writer:  # pylint: disable=abstract-class-instantiated
+    ) as writer:
         links.to_excel(writer, header=True, index=None, sheet_name="link")
     print("{0} -> Data is saved to Excel successfully!".format(vehicle))
     return None

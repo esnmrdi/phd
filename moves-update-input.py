@@ -3,7 +3,6 @@
 # This is an extra step because of grade calculation error we had
 # Ehsan Moradi, Ph.D. Candidate
 
-# pylint: disable=abstract-class-instantiated
 
 # %%
 # Load required libraries
@@ -28,7 +27,7 @@ def save_to_Excel(df_dict, directory, output_file):
     output_path = directory + output_file
     with pd.ExcelWriter(
         output_path, engine="openpyxl", mode="w"
-    ) as writer:  # pylint: disable=abstract-class-instantiated
+    ) as writer:
         for name, sheet in df_dict.items():
             sheet.to_excel(writer, header=True, index=None, sheet_name=name)
     print("Data is saved to Excel successfully!")

@@ -2,7 +2,6 @@
 # Ramer-Douglas-Peucker Algorithm
 # Ehsan Moradi, Ph.D. Candidate
 
-# pylint: disable=abstract-class-instantiated
 
 # %%
 # Load required libraries

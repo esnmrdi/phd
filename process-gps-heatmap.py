@@ -2,7 +2,6 @@
 # Aggregate GPS Trajectories for Building a Heatmap
 # Ehsan Moradi, Ph.D. Candidate
 
-# pylint: disable=abstract-class-instantiated
 
 # %% [markdown]
 # Load required libraries
@@ -35,7 +34,7 @@ def save_to_excel(df, settings):
     )
     with pd.ExcelWriter(
         output_path, engine="openpyxl", mode="w"
-    ) as writer:  # pylint: disable=abstract-class-instantiated
+    ) as writer:
         df.to_excel(writer, header=True, index=None)
     print("Data is saved to Excel successfully!")
     return None

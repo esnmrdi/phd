@@ -2,7 +2,6 @@
 # Add link IDs to the results of reverse-geocoding process
 # Ehsan Moradi, Ph.D. Candidate
 
-# pylint: disable=abstract-class-instantiated
 
 # %%
 # Load required packages
@@ -39,7 +38,6 @@ def save_to_excel(df, vehicle, settings):
         settings["OUTPUT_TYPE"], settings["OUTPUT_INDEX"]
     )
     output_path = directory + output_file
-    # pylint: disable=abstract-class-instantiated
     with pd.ExcelWriter(output_path, engine="openpyxl", mode="w") as writer:
         df.to_excel(writer, header=True, index=None)
     print("{0} -> Data is saved to Excel successfully!".format(vehicle))

@@ -2,7 +2,6 @@
 # Grade calculation from altitude
 # Ehsan Moradi, Ph.D. Candidate
 
-# pylint: disable=abstract-class-instantiated
 
 # %%
 # Load required packages
@@ -126,7 +125,7 @@ def save_to_excel(df, vehicle, trip, index, settings):
     write_mode = "w" if index == 0 else "a"
     with pd.ExcelWriter(
         output_path, engine="openpyxl", mode=write_mode
-    ) as writer:  # pylint: disable=abstract-class-instantiated
+    ) as writer:
         df.to_excel(writer, sheet_name=trip, header=True, index=None)
     print("{0}, {1} -> Data is saved to Excel successfully!".format(vehicle, trip))
     return None

@@ -2,7 +2,6 @@
 # Artificial Neural Network for RPM and FCR Prediction
 # Ehsan Moradi, Ph.D. Candidate
 
-# pylint: disable=abstract-class-instantiated
 
 # %%
 # Load required libraries

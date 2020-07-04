@@ -3,7 +3,6 @@
 # The output is mainly used for comparison with MOVES output
 # Ehsan Moradi, Ph.D. Candidate
 
-# pylint: disable=abstract-class-instantiated
 
 # %%
 # Load required libraries
@@ -43,7 +42,7 @@ def save_to_Excel(links, datetime_tag, vehicle, settings):
     output_path_links = directory + output_file_links
     with pd.ExcelWriter(
         output_path_links, engine="openpyxl", mode="w"
-    ) as writer:  # pylint: disable=abstract-class-instantiated
+    ) as writer:
         links.to_excel(
             writer, header=True, index=None, sheet_name="Distance-based Rates per Link"
         )

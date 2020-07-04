@@ -2,7 +2,6 @@
 # Hidden Markov Model
 # Ehsan Moradi, Ph.D. Candidate
 
-# pylint: disable=abstract-class-instantiated
 
 # %%
 # Load required libraries

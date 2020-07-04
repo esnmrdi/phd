@@ -2,7 +2,6 @@
 # Detrending PEMS measurements affected by sensor temperature changes
 # Ehsan Moradi, Ph.D. Candidate
 
-# pylint: disable=abstract-class-instantiated
 
 # %%
 # Load required libraries
@@ -92,7 +91,7 @@ def save_to_excel(df, vehicle, device, settings):
     output_path = directory + output_file
     with pd.ExcelWriter(
         output_path, engine="openpyxl", mode="w"
-    ) as writer:  # pylint: disable=abstract-class-instantiated
+    ) as writer:
         df.to_excel(
             writer, sheet_name="With Detrended PM and PN", header=True, index=None
         )

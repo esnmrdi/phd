@@ -2,7 +2,6 @@
 # Reverse Geo-coding of GPS Logs to Assign Link IDs to the Points for MOVES Analysis
 # Ehsan Moradi, Ph.D. Candidate
 
-# pylint: disable=abstract-class-instantiated
 
 # %% [markdown]
 # Load required libraries
@@ -47,7 +46,7 @@ def save_to_excel(df, vehicle, settings):
     output_path = directory + output_file
     with pd.ExcelWriter(
         output_path, engine="openpyxl", mode="w"
-    ) as writer:  # pylint: disable=abstract-class-instantiated
+    ) as writer:
         df.to_excel(writer, header=True, index=None)
     print("{0} -> Data is saved to Excel successfully!".format(vehicle))
     return None

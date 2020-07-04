@@ -2,7 +2,6 @@
 # Analysis of Covariance (ANCOVA)
 # Ehsan Moradi, Ph.D. Candidate
 
-# pylint: disable=abstract-class-instantiated
 
 # %%
 # Load required librarie

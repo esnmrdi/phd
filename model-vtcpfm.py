@@ -3,7 +3,6 @@
 # to Compare its output with our best Cascaded ANN results
 # Ehsan Moradi, Ph.D. Candidate
 
-# pylint: disable=abstract-class-instantiated
 
 # %%
 # Load required libraries

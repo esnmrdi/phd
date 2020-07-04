@@ -2,7 +2,6 @@
 # Convert Instant Emission Concentration and Fuel Rate to Kilograms per Second and Joules per Second (KGS and JS)
 # Ehsan Moradi, Ph.D. Candidate
 
-# pylint: disable=abstract-class-instantiated
 
 # %%
 # Load required libraries
@@ -61,7 +60,7 @@ def save_to_excel(df, vehicle, settings):
     output_path = directory + output_file
     with pd.ExcelWriter(
         output_path, engine="openpyxl", mode="w"
-    ) as writer:  # pylint: disable=abstract-class-instantiated
+    ) as writer:
         df.to_excel(writer, sheet_name="Rates in KGS and JS", header=True, index=None)
     print("{0} -> Data is saved to Excel successfully!".format(vehicle))
     return None

@@ -2,24 +2,22 @@
 # Regular Recurrent Neural Network (RNN) for Energy Consumption and Emissions Rate Estimation
 # Ehsan Moradi, Ph.D. Candidate
 
-# pylint: disable=abstract-class-instantiated
 
 # %%
-# Load required libraries
+# Load required libraries and define classes
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 import seaborn as sns
 import tensorflow as tf
-from tensorflow.keras import Sequential
-from tensorflow.keras.layers import Dense, SimpleRNN
+from tensorflow.python.keras import Sequential
+from tensorflow.python.keras.layers import Dense, SimpleRNN
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
 
-# %%
-# Display training progress
+
 class ReportProgress(tf.keras.callbacks.Callback):
     def __init__(self, df, test_split_ratio, n_epochs):
         self.df = df
@@ -37,7 +35,8 @@ class ReportProgress(tf.keras.callbacks.Callback):
 
     def on_epoch_end(self, epoch, logs):
         if epoch % 20 == 0 and epoch != 0 and epoch != self.n_epochs:
-            print("{0} out of {1} epochs completed.".format(epoch, self.n_epochs))
+            print("{0} out of {1} epochs completed.".format(
+                epoch, self.n_epochs))
 
     def on_train_end(self, logs):
         print("Training finished.")
@@ -84,8 +83,8 @@ def generate(df, features, dependent, lookback):
     df_y = [y for y in df[dependent].to_numpy()]
     X, y = [], []
     for i in range(lookback, len(df)):
-        X.append(df_X[i - lookback : i + 1])
-        y.append(df_y[i - lookback : i + 1])
+        X.append(df_X[i - lookback: i + 1])
+        y.append(df_y[i - lookback: i + 1])
     X, y = np.array(X), np.array(y)
     return X, y
 
