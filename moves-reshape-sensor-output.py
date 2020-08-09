@@ -9,6 +9,7 @@
 import pandas as pd
 from os import walk
 
+
 # %%
 # Load data from Excel to a pandas dataframe
 def load_from_Excel(directory, input_file):
@@ -118,11 +119,26 @@ EXPERIMENTS = {
 # %%
 # Data transformation settings
 HEADERS = {
-    "FCR_JMI": {"pollutant_id": 91, "pollutant_name": "Total Energy Consumption"},
-    "PM_KGMI": {"pollutant_id": 110, "pollutant_name": "Primary Exhaust PM2.5 - Total"},
-    "CO2_KGMI": {"pollutant_id": 90, "pollutant_name": "Atmospheric CO2"},
-    "NO2_KGMI": {"pollutant_id": 33, "pollutant_name": "Nitrogen Dioxide (NO2)"},
-    "NO_KGMI": {"pollutant_id": 32, "pollutant_name": "Nitrogen Oxide (NO)"},
+    "FCR_JMI": {
+        "pollutant_id": 91, 
+        "pollutant_name": "Total Energy Consumption"
+    },
+    "PM_KGMI": {
+        "pollutant_id": 110, 
+        "pollutant_name": "Primary Exhaust PM2.5 - Total"
+    },
+    "CO2_KGMI": {
+        "pollutant_id": 90, 
+        "pollutant_name": "Atmospheric CO2"
+    },
+    "NO2_KGMI": {
+        "pollutant_id": 33, 
+        "pollutant_name": "Nitrogen Dioxide (NO2)"
+    },
+    "NO_KGMI": {
+        "pollutant_id": 32, 
+        "pollutant_name": "Nitrogen Oxide (NO)"
+    },
 }
 
 
@@ -140,12 +156,14 @@ for vehicle in EXPERIMENTS[device]:
         + vehicle
         + "/Processed/"
     )
-    target_filenames = list_filenames(directory, vehicle + " - NONE - " + input_index)
+    target_filenames = list_filenames(
+        directory, vehicle + " - NONE - " + input_index)
     for filename in target_filenames:
         # Load data from Excel to a pandas dataframe
         df = load_from_Excel(directory, filename)
         no_date_time = "_".join(
-            (filename[:3], "".join(filename[-21:-11].split("-")), filename[-10:-6])
+            (filename[:3], "".join(
+                filename[-21:-11].split("-")), filename[-10:-6])
         ).lower()
         pollutant_abrvs = [key for key, index in HEADERS.items()]
         for col_name, col_data in df.iteritems():
@@ -157,7 +175,8 @@ for vehicle in EXPERIMENTS[device]:
                     link_id = df["linkID"].iloc[index]
                     link_length = df["linkLength"].iloc[index]
                     row["uniqueID"] = (
-                        no_date_time + "_" + str(link_id) + "_" + str(pollutant_id)
+                        no_date_time + "_" +
+                        str(link_id) + "_" + str(pollutant_id)
                     )
                     row["yearID"] = filename[-21:-17]
                     row["monthID"] = filename[-16:-14].strip("0")
@@ -167,7 +186,8 @@ for vehicle in EXPERIMENTS[device]:
                     row["pollutantID"] = pollutant_id
                     row["pollutantName"] = pollutant_name
                     row["ratePerDistanceSensor"] = df[col_name].iloc[index]
-                    # Aggregate vehicle/hour-based dataframes in another large dataframe
+                    # Aggregate vehicle/hour-based dataframes in another 
+                    # large dataframe
                     aggregate_df = aggregate_df.append(row, ignore_index=True)
 
 aggregate_df["yearID"] = aggregate_df["yearID"].astype(int)
@@ -177,7 +197,9 @@ aggregate_df["linkID"] = aggregate_df["linkID"].astype(int)
 aggregate_df["pollutantID"] = aggregate_df["pollutantID"].astype(int)
 
 directory = (
-    "../../../Google Drive/Academia/PhD Thesis/Field Experiments/" + device + "/"
+    "../../../Google Drive/Academia/PhD Thesis/Field Experiments/" 
+    + device 
+    + "/"
 )
 save_to_Excel(aggregate_df, directory, "output_" + sensor + ".xlsx")
 
