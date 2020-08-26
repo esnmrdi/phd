@@ -1,42 +1,34 @@
 # %%
-# Regular Recurrent Neural Network (RNN) for Energy Consumption and Emissions Rate Estimation
+# RNN (Simple, GRU, LSTM) for Vehicle-based Fuel Consumption and Emissions Rate Estimation
 # Ehsan Moradi, Ph.D. Candidate
 
-
 # %%
-# Load required libraries and define classes
-import numpy as np
-import pandas as pd
+# Import required libraries
+# Define a class for tracking the progress of model training
+import keras
+from keras import backend
+from keras.layers import Dense, SimpleRNN, GRU, LSTM
+from keras import Sequential, utils
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 import seaborn as sns
-import tensorflow as tf
-from tensorflow.python.keras import Sequential
-from tensorflow.python.keras.layers import Dense, SimpleRNN
-from sklearn import preprocessing
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import r2_score
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.metrics import r2_score, mean_squared_error
+import openpyxl
 
 
-class ReportProgress(tf.keras.callbacks.Callback):
-    def __init__(self, df, test_split_ratio, n_epochs):
-        self.df = df
-        self.test_split_ratio = test_split_ratio
+class ReportProgress(keras.callbacks.Callback):
+    def __init__(self, n_epochs):
         self.n_epochs = n_epochs
 
     def on_train_begin(self, logs):
-        n_examples = len(self.df)
-        n_train = int((1 - self.test_split_ratio) * n_examples)
-        print(
-            "Training started on {0} out of {1} available examples.".format(
-                n_train, n_examples
-            )
-        )
+        print("Training started.")
 
-    def on_epoch_end(self, epoch, logs):
-        if epoch % 20 == 0 and epoch != 0 and epoch != self.n_epochs:
-            print("{0} out of {1} epochs completed.".format(
-                epoch, self.n_epochs))
+    # def on_epoch_end(self, epoch, logs):
+    #     if epoch % 20 == 0 and epoch != 0 and epoch != self.n_epochs:
+    #         print("{0} out of {1} epochs completed.".format(epoch, self.n_epochs))
 
     def on_train_end(self, logs):
         print("Training finished.")
@@ -45,66 +37,196 @@ class ReportProgress(tf.keras.callbacks.Callback):
 # %%
 # Load sample data from Excel to a pandas dataframe
 def load_from_Excel(vehicle, sheet, settings):
+    input_type = settings["INPUT_TYPE"]
+    input_index = settings["INPUT_INDEX"]
     directory = (
-        "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
+        "../../Google Drive/Academia/PhD Thesis/Field Experiments/3DATX parSYNC Plus/"
         + vehicle
         + "/Processed/"
     )
-    input_file = vehicle + " - {0} - {1}.xlsx".format(
-        settings["INPUT_TYPE"], settings["INPUT_INDEX"]
-    )
+    input_file = vehicle + " - {0} - {1}.xlsx".format(input_type, input_index)
     input_path = directory + input_file
     df = pd.read_excel(input_path, sheet_name=sheet, header=0)
     return df
 
 
 # %%
-# Scale the features
-def scale(df, features, dependent):
-    df_temp = df.copy()
-    all_features = features + dependent
-    scaler = preprocessing.StandardScaler().fit(df_temp[all_features])
-    df_temp[all_features] = scaler.transform(df_temp[all_features])
-    return df_temp, scaler
+# Save output data (including model predictions) to a New Excel File
+def save_to_Excel(df, vehicle, settings):
+    output_type = settings["OUTPUT_TYPE"]
+    output_index = settings["OUTPUT_INDEX"]
+    directory = (
+        "../../Google Drive/Academia/PhD Thesis/Field Experiments/3DATX parSYNC Plus/"
+        + vehicle
+        + "/Processed/"
+    )
+    output_file = vehicle + " - {0} - {1}.xlsx".format(output_type, output_index)
+    output_path = directory + output_file
+    with pd.ExcelWriter(output_path, engine="openpyxl", mode="w") as writer:
+        df.to_excel(writer, header=True, index=None)
+    print("{0} -> Data is saved to Excel successfully!".format(vehicle))
+    return None
 
 
 # %%
-# Reverse-scale the features
-def reverse_scale(df, scaler):
+# Log model attributes and corresponding scores to a file (one by one)
+def log_model_score(row):
+    directory = "../../Google Drive/Academia/PhD Thesis/Charts, Tables, Forms, Flowcharts, Spreadsheets, Figures/"
+    output_file = "Paper III - RNN Results.xlsx"
+    output_path = directory + output_file
+    wb = openpyxl.load_workbook(output_path)
+    ws = wb.get_sheet_by_name("Sheet1")
+    ws.append(row)
+    wb.save(output_path)
+    wb.close()
+    print("Recored is added to Excel successfully!")
+    return None
+
+
+# %%
+# Scale the data
+def scale(df, features, dependent):
     df_temp = df.copy()
-    df_temp = np.sqrt(scaler.var_[-1]) * df_temp + scaler.mean_[-1]
-    return df_temp
+    scaler_X = StandardScaler().fit(df_temp[features])
+    scaler_y = StandardScaler().fit(df_temp[[dependent]])
+    df_temp[features] = scaler_X.transform(df_temp[features])
+    df_temp[[dependent]] = scaler_y.transform(df_temp[[dependent]])
+    return df_temp, scaler_X, scaler_y
 
 
 # %%
 # Generate time-series input for the desired lookback order
-def generate(df, features, dependent, lookback):
-    df_X = [tuple(x) for x in df[features].to_numpy()]
-    df_y = [y for y in df[dependent].to_numpy()]
+def generate_input(df, features, dependent, lookback):
+    dataset = df[features + [dependent]].to_numpy()
+    dim = len(features)
     X, y = [], []
-    for i in range(lookback, len(df)):
-        X.append(df_X[i - lookback: i + 1])
-        y.append(df_y[i - lookback: i + 1])
+    for i in range(lookback, len(dataset)):
+        X.append(dataset[i - lookback : i + 1, :dim])
+        y.append(dataset[i, dim])
     X, y = np.array(X), np.array(y)
     return X, y
 
 
 # %%
-# Split data to train and test sets and reshape arrays for modeling
-def splitAndReshape(X, y, test_split_ratio, lookback):
-    test_size = int(len(X) * test_split_ratio)
-    split_index = len(X) - test_size
-    n_features = len(X[0, 0])
-    X_train, y_train = X[:split_index], y[:split_index]
-    X_test, y_test = X[split_index:], y[split_index:]
-    X_train = X_train.reshape(X_train.shape(0), lookback, n_features)
-    X_test = X_test.reshape(X_test.shape(0), lookback, n_features)
-    return X_train, y_train, X_test, y_test
+# Split data into train and test parts
+def split(X, y, test_split_ratio, batch_size):
+    n_examples = len(X)
+    split_index = int(n_examples * (1 - test_split_ratio))
+    train_X, test_X = X[:split_index], X[split_index:]
+    train_y, test_y = y[:split_index], y[split_index:]
+    trim_train = len(train_X) - len(train_X) % batch_size
+    trim_test = len(test_X) - len(test_X) % batch_size
+    train_X, test_X = train_X[:trim_train], test_X[:trim_test]
+    train_y, test_y = train_y[:trim_train], test_y[:trim_test]
+    return train_X, train_y, test_X, test_y
+
+
+# %%
+# Definition of the custom loss function
+def root_mean_squared_error(y_true, y_pred):
+    return backend.sqrt(backend.mean(backend.square(y_pred - y_true)))
+
+
+# %%
+# Define RNN model
+def define_model(rnn_type, lookback, n_stacks, n_units, settings):
+    n_features = len(settings["FEATURES"])
+    batch_size = settings["BATCH_SIZE"]
+    drop_prop = settings["DROP_PROP"]
+    common_args = "n_units, dropout=drop_prop, stateful=True"
+    model = Sequential()  # Default activation function is tanh
+    if n_stacks == 1:
+        model.add(
+            eval(
+                rnn_type
+                + "("
+                + common_args
+                + ", batch_input_shape=(batch_size, lookback + 1, n_features)"
+                + ")"
+            )
+        )
+    elif n_stacks == 2:
+        model.add(
+            eval(
+                rnn_type
+                + "("
+                + common_args
+                + ", batch_input_shape=(batch_size, lookback + 1, n_features), return_sequences=True"
+                + ")"
+            )
+        )
+        model.add(eval(rnn_type + "(" + common_args + ")"))
+    else:
+        model.add(
+            eval(
+                rnn_type
+                + "("
+                + common_args
+                + ", batch_input_shape=(batch_size, lookback + 1, n_features), return_sequences=True"
+                + ")"
+            )
+        )
+        for _ in range(n_stacks - 2):
+            model.add(
+                eval(rnn_type + "(" + common_args + ", return_sequences=True" + ")")
+            )
+        model.add(eval(rnn_type + "(" + common_args + ")"))
+    model.add(Dense(1, activation="linear"))
+    return model
+
+
+# %%
+# Train the RNN model by testing alternative architectures (different lookback orders, hidden units, and stacks)
+def train_rnn(vehicle, dependent, optimizer, lookback, model, settings):
+    features = settings["FEATURES"]
+    test_split_ratio = settings["TEST_SPLIT_RATIO"]
+    batch_size = settings["BATCH_SIZE"]
+    n_epochs = settings["N_EPOCHS"]
+    loss = settings["LOSS"]
+    predicted = dependent + "_PRED"
+    df = load_from_Excel(vehicle, "Sheet1", SETTINGS)
+    df, scaler_X, scaler_y = scale(df, features, dependent)
+    X, y = generate_input(df, features, dependent, lookback)
+    train_X, train_y, test_X, test_y = split(X, y, test_split_ratio, batch_size)
+    model.compile(loss=loss, optimizer=optimizer)
+    history = model.fit(
+        train_X,
+        train_y,
+        batch_size=batch_size,
+        epochs=n_epochs,
+        validation_data=(test_X, test_y),
+        verbose=1,
+        callbacks=[
+            ReportProgress(n_epochs),
+            keras.callbacks.EarlyStopping(
+                monitor="val_loss", min_delta=0, patience=10, verbose=0, mode="min"
+            ),
+        ],
+    )
+    train_y_predict = model.predict(train_X, batch_size=batch_size)
+    test_y_predict = model.predict(test_X, batch_size=batch_size)
+    train_y, train_y_predict = (
+        scaler_y.inverse_transform(train_y),
+        scaler_y.inverse_transform(train_y_predict),
+    )
+    test_y, test_y_predict = (
+        scaler_y.inverse_transform(test_y),
+        scaler_y.inverse_transform(test_y_predict),
+    )
+    train_r_squared = r2_score(train_y, train_y_predict)
+    test_r_squared = r2_score(test_y, test_y_predict)
+    r_squared = {"train": train_r_squared, "test": test_r_squared}
+    rmse = {
+        "train": history.history["loss"][-1],
+        "test": history.history["val_loss"][-1],
+    }
+    return r_squared, rmse
 
 
 # %%
 # Experiments to include in modeling
-EXPERIMENTS = (  # the boolean points to whether the experiment type is obd_only or pems_included.
+# The boolean points to whether the experiment type is obd_only or pems_included.
+EXPERIMENTS = (
     ("009 Renault Logan 2014 (1.6L Manual)", True),
     ("010 JAC J5 2015 (1.8L Auto)", True),
     ("011 JAC S5 2017 (2.0L TC Auto)", True),
@@ -141,49 +263,65 @@ EXPERIMENTS = (  # the boolean points to whether the experiment type is obd_only
     ("042 Nissan Rouge 2020 (2.5L Auto)", False),
     ("043 Mazda CX-3 2019 (2.0L Auto)", False),
 )
-EXPERIMENTS = (("009 Renault Logan 2014 (1.6L Manual)", True),)
 
 # %%
 # Model execution and input/output settings
 pd.options.mode.chained_assignment = None
 plt.style.use("bmh")
 SETTINGS = {
-    "DEPENDENT_OBD": "FCR_LH",
-    "PREDICTED_OBD": "FCR_LH_PRED",
-    "DEPENDENT_PEMS": "CO2_KGS",
-    "PREDICTED_PEMS": "CO2_KGS_PRED",
-    "FEATURES": ("SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG"),
+    "FEATURES": ["SPD_KH", "ACC_MS2", "ALT_M"],
+    "DEPENDENTS": ["FCR_LH", "CO2_KGS", "NO_KGS", "NO2_KGS", "PM_KGS"],
+    "RNN_TYPES": ["SimpleRNN", "GRU", "LSTM"],
+    "LOOKBACK": range(1, 11),
+    "N_UNITS": range(5, 105, 5),
+    "N_STACKS": range(1, 21),
+    "N_EPOCHS": 200,
+    "TEST_SPLIT_RATIO": 0.2,
+    "DROP_PROP": 0.1,
+    "BATCH_SIZE": 64,
+    "LOSS": root_mean_squared_error,
+    "OPTIMIZERS": ["rmsprop", "adam", "SGD"],
     "INPUT_TYPE": "NONE",
     "INPUT_INDEX": "04",
-    "OUTPUT_TYPE": "RNN",
     "OUTPUT_INDEX": "05",
-    "LOOKBACK": 5,
-    "TEST_SPLIT_RATIO": 0.3,
 }
 
 # %%
 # Batch execution on trips of all included vehicles
-for index, vehicle in enumerate(EXPERIMENTS):
-    experiment_type = "obd_only" if vehicle[1] == True else "pems_included"
-    df = load_from_Excel(vehicle[0], "Sheet1", SETTINGS)
-    features = SETTINGS["FEATURES"]
-    dependent = (
-        SETTINGS["DEPENDENT_OBD"]
-        if experiment_type == "obd_only"
-        else SETTINGS["DEPENDENT_PEMS"]
-    )
-    df, scaler = scale(df, features, dependent)
-    train_set, test_set = split(df, SETTINGS["TEST_SPLIT_RATIO"])
-    lookback_train_set = generate(train_set, SETTINGS["LAG_ORDER"])
-
-    figure(num=1, figsize=(8, 4), dpi=150, facecolor="w", edgecolor="k")
-    plt.plot(
-        df[SETTINGS[dependent]][:300], color="blue",
-    )
-    plt.title("Fuel Consumption Rate Variations")
-    plt.xlabel("Time")
-    plt.ylabel("FCR (L/H)")
-    plt.show()
-
-
+# loop through PEMS-included experiments only
+features = SETTINGS["FEATURES"]
+dependents = SETTINGS["DEPENDENTS"]
+rnn_types = SETTINGS["RNN_TYPES"]
+optimizers = SETTINGS["OPTIMIZERS"]
+lookback_range = SETTINGS["LOOKBACK"]
+n_stacks_range = SETTINGS["N_STACKS"]
+n_units_range = SETTINGS["N_UNITS"]
+vehicles = (item[0] for item in EXPERIMENTS if item[1] == False)
+for vehicle in vehicles:
+    for dependent in dependents:
+        for rnn_type in rnn_types:
+            for optimizer in optimizers:
+                for lookback in lookback_range:
+                    for n_stacks in n_stacks_range:
+                        for n_units in n_units_range:
+                            model = define_model(
+                                rnn_type, lookback, n_stacks, n_units, SETTINGS
+                            )
+                            r_squared, rmse = train_rnn(
+                                vehicle, dependent, optimizer, lookback, model, SETTINGS
+                            )
+                            row = (
+                                vehicle,
+                                dependent,
+                                rnn_type,
+                                optimizer,
+                                lookback,
+                                n_stacks,
+                                n_units,
+                                r_squared["train"],
+                                r_squared["test"],
+                                rmse["train"],
+                                rmse["test"],
+                            )
+                            log_model_score(row)
 # %%
