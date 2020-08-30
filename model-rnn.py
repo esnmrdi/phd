@@ -19,21 +19,6 @@ from sklearn.metrics import r2_score, mean_squared_error
 import openpyxl
 
 
-class ReportProgress(keras.callbacks.Callback):
-    def __init__(self, n_epochs):
-        self.n_epochs = n_epochs
-
-    def on_train_begin(self, logs):
-        print("Training started.")
-
-    # def on_epoch_end(self, epoch, logs):
-    #     if epoch % 20 == 0 and epoch != 0 and epoch != self.n_epochs:
-    #         print("{0} out of {1} epochs completed.".format(epoch, self.n_epochs))
-
-    def on_train_end(self, logs):
-        print("Training finished.")
-
-
 # %%
 # Load sample data from Excel to a pandas dataframe
 def load_from_Excel(vehicle, sheet, settings):
@@ -75,11 +60,11 @@ def log_model_score(row):
     output_file = "Paper III - RNN Results.xlsx"
     output_path = directory + output_file
     wb = openpyxl.load_workbook(output_path)
-    ws = wb.get_sheet_by_name("Sheet1")
+    ws = wb["Sheet1"]
     ws.append(row)
     wb.save(output_path)
     wb.close()
-    print("Recored is added to Excel successfully!")
+    print("Recored successfully added to Excel!")
     return None
 
 
@@ -133,7 +118,7 @@ def define_model(rnn_type, lookback, n_stacks, n_units, settings):
     n_features = len(settings["FEATURES"])
     batch_size = settings["BATCH_SIZE"]
     drop_prop = settings["DROP_PROP"]
-    common_args = "n_units, dropout=drop_prop, stateful=True"
+    common_args = "n_units, dropout=drop_prop, recurrent_dropout=drop_prop, stateful=True"
     model = Sequential()  # Default activation function is tanh
     if n_stacks == 1:
         model.add(
@@ -195,9 +180,8 @@ def train_rnn(vehicle, dependent, optimizer, lookback, model, settings):
         batch_size=batch_size,
         epochs=n_epochs,
         validation_data=(test_X, test_y),
-        verbose=1,
+        verbose=0,
         callbacks=[
-            ReportProgress(n_epochs),
             keras.callbacks.EarlyStopping(
                 monitor="val_loss", min_delta=0, patience=10, verbose=0, mode="min"
             ),
@@ -263,6 +247,7 @@ EXPERIMENTS = (
     ("042 Nissan Rouge 2020 (2.5L Auto)", False),
     ("043 Mazda CX-3 2019 (2.0L Auto)", False),
 )
+EXPERIMENTS = (("015 VW Jetta 2016 (1.4L TC Auto)", False),)
 
 # %%
 # Model execution and input/output settings
@@ -272,15 +257,15 @@ SETTINGS = {
     "FEATURES": ["SPD_KH", "ACC_MS2", "ALT_M"],
     "DEPENDENTS": ["FCR_LH", "CO2_KGS", "NO_KGS", "NO2_KGS", "PM_KGS"],
     "RNN_TYPES": ["SimpleRNN", "GRU", "LSTM"],
-    "LOOKBACK": range(1, 11),
-    "N_UNITS": range(5, 105, 5),
-    "N_STACKS": range(1, 21),
+    "LOOKBACK": range(1, 7),
+    "N_UNITS": range(10, 110, 10),
+    "N_STACKS": range(1, 2),
     "N_EPOCHS": 200,
     "TEST_SPLIT_RATIO": 0.2,
     "DROP_PROP": 0.1,
     "BATCH_SIZE": 64,
     "LOSS": root_mean_squared_error,
-    "OPTIMIZERS": ["rmsprop", "adam", "SGD"],
+    "OPTIMIZER": "rmsprop",
     "INPUT_TYPE": "NONE",
     "INPUT_INDEX": "04",
     "OUTPUT_INDEX": "05",
@@ -292,7 +277,7 @@ SETTINGS = {
 features = SETTINGS["FEATURES"]
 dependents = SETTINGS["DEPENDENTS"]
 rnn_types = SETTINGS["RNN_TYPES"]
-optimizers = SETTINGS["OPTIMIZERS"]
+optimizer = SETTINGS["OPTIMIZER"]
 lookback_range = SETTINGS["LOOKBACK"]
 n_stacks_range = SETTINGS["N_STACKS"]
 n_units_range = SETTINGS["N_UNITS"]
@@ -300,28 +285,28 @@ vehicles = (item[0] for item in EXPERIMENTS if item[1] == False)
 for vehicle in vehicles:
     for dependent in dependents:
         for rnn_type in rnn_types:
-            for optimizer in optimizers:
-                for lookback in lookback_range:
-                    for n_stacks in n_stacks_range:
-                        for n_units in n_units_range:
-                            model = define_model(
-                                rnn_type, lookback, n_stacks, n_units, SETTINGS
-                            )
-                            r_squared, rmse = train_rnn(
-                                vehicle, dependent, optimizer, lookback, model, SETTINGS
-                            )
-                            row = (
-                                vehicle,
-                                dependent,
-                                rnn_type,
-                                optimizer,
-                                lookback,
-                                n_stacks,
-                                n_units,
-                                r_squared["train"],
-                                r_squared["test"],
-                                rmse["train"],
-                                rmse["test"],
-                            )
-                            log_model_score(row)
+            for lookback in lookback_range:
+                for n_stacks in n_stacks_range:
+                    for n_units in n_units_range:
+                        print(vehicle, dependent, rnn_type, lookback, n_stacks, n_units)
+                        model = define_model(
+                            rnn_type, lookback, n_stacks, n_units, SETTINGS
+                        )
+                        r_squared, rmse = train_rnn(
+                            vehicle, dependent, optimizer, lookback, model, SETTINGS
+                        )
+                        row = (
+                            vehicle,
+                            dependent,
+                            rnn_type,
+                            optimizer,
+                            lookback,
+                            n_stacks,
+                            n_units,
+                            r_squared["train"],
+                            r_squared["test"],
+                            rmse["train"],
+                            rmse["test"],
+                        )
+                        log_model_score(row)
 # %%
