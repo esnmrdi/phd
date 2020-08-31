@@ -9,14 +9,16 @@ import keras
 from keras import backend
 from keras.layers import Dense, SimpleRNN, GRU, LSTM
 from keras import Sequential, utils
+from keras.callbacks import EarlyStopping  
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
-import seaborn as sns
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import r2_score, mean_squared_error
-import openpyxl
+import csv
+from datetime import datetime
+import time
 
 
 # %%
@@ -36,35 +38,15 @@ def load_from_Excel(vehicle, sheet, settings):
 
 
 # %%
-# Save output data (including model predictions) to a New Excel File
-def save_to_Excel(df, vehicle, settings):
-    output_type = settings["OUTPUT_TYPE"]
-    output_index = settings["OUTPUT_INDEX"]
-    directory = (
-        "../../Google Drive/Academia/PhD Thesis/Field Experiments/3DATX parSYNC Plus/"
-        + vehicle
-        + "/Processed/"
-    )
-    output_file = vehicle + " - {0} - {1}.xlsx".format(output_type, output_index)
-    output_path = directory + output_file
-    with pd.ExcelWriter(output_path, engine="openpyxl", mode="w") as writer:
-        df.to_excel(writer, header=True, index=None)
-    print("{0} -> Data is saved to Excel successfully!".format(vehicle))
-    return None
-
-
-# %%
 # Log model attributes and corresponding scores to a file (one by one)
 def log_model_score(row):
     directory = "../../Google Drive/Academia/PhD Thesis/Charts, Tables, Forms, Flowcharts, Spreadsheets, Figures/"
-    output_file = "Paper III - RNN Results.xlsx"
+    output_file = "Paper III - RNN Results.csv"
     output_path = directory + output_file
-    wb = openpyxl.load_workbook(output_path)
-    ws = wb["Sheet1"]
-    ws.append(row)
-    wb.save(output_path)
-    wb.close()
-    print("Recored successfully added to Excel!")
+    with open(output_path, "a") as f:
+        writer = csv.writer(f)
+        writer.writerow(row)
+    print(row)
     return None
 
 
@@ -118,7 +100,9 @@ def define_model(rnn_type, lookback, n_stacks, n_units, settings):
     n_features = len(settings["FEATURES"])
     batch_size = settings["BATCH_SIZE"]
     drop_prop = settings["DROP_PROP"]
-    common_args = "n_units, dropout=drop_prop, recurrent_dropout=drop_prop, stateful=True"
+    common_args = (
+        "n_units, dropout=drop_prop, recurrent_dropout=drop_prop, stateful=True"
+    )
     model = Sequential()  # Default activation function is tanh
     if n_stacks == 1:
         model.add(
@@ -163,6 +147,8 @@ def define_model(rnn_type, lookback, n_stacks, n_units, settings):
 # %%
 # Train the RNN model by testing alternative architectures (different lookback orders, hidden units, and stacks)
 def train_rnn(vehicle, dependent, optimizer, lookback, model, settings):
+    start_timestamp = time.time()
+    start_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     features = settings["FEATURES"]
     test_split_ratio = settings["TEST_SPLIT_RATIO"]
     batch_size = settings["BATCH_SIZE"]
@@ -182,7 +168,7 @@ def train_rnn(vehicle, dependent, optimizer, lookback, model, settings):
         validation_data=(test_X, test_y),
         verbose=0,
         callbacks=[
-            keras.callbacks.EarlyStopping(
+            EarlyStopping(
                 monitor="val_loss", min_delta=0, patience=10, verbose=0, mode="min"
             ),
         ],
@@ -204,7 +190,9 @@ def train_rnn(vehicle, dependent, optimizer, lookback, model, settings):
         "train": history.history["loss"][-1],
         "test": history.history["val_loss"][-1],
     }
-    return r_squared, rmse
+    end_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    elapsed_time = round(time.time() - start_timestamp, 1)
+    return r_squared, rmse, start_datetime, end_datetime, elapsed_time
 
 
 # %%
@@ -247,25 +235,29 @@ EXPERIMENTS = (
     ("042 Nissan Rouge 2020 (2.5L Auto)", False),
     ("043 Mazda CX-3 2019 (2.0L Auto)", False),
 )
-EXPERIMENTS = (("015 VW Jetta 2016 (1.4L TC Auto)", False),)
+EXPERIMENTS = (
+    ("015 VW Jetta 2016 (1.4L TC Auto)", False),
+)
 
 # %%
 # Model execution and input/output settings
 pd.options.mode.chained_assignment = None
 plt.style.use("bmh")
 SETTINGS = {
-    "FEATURES": ["SPD_KH", "ACC_MS2", "ALT_M"],
-    "DEPENDENTS": ["FCR_LH", "CO2_KGS", "NO_KGS", "NO2_KGS", "PM_KGS"],
-    "RNN_TYPES": ["SimpleRNN", "GRU", "LSTM"],
+    "FEATURES": ["SPD_KH", "ACC_MS2", "ALT_M", "RPM"],
+    # "DEPENDENTS": ["FCR_LH", "CO2_KGS", "NO_KGS", "NO2_KGS", "PM_KGS"],
+    "DEPENDENTS": ["FCR_LH", "CO2_KGS", "NO2_KGS", "PM_KGS"],
+    # "RNN_TYPES": ["SimpleRNN", "GRU", "LSTM"],
+    "RNN_TYPES": ["LSTM"],
     "LOOKBACK": range(1, 7),
-    "N_UNITS": range(10, 110, 10),
-    "N_STACKS": range(1, 2),
+    "N_UNITS": [100],
+    "N_STACKS": range(1, 4),
     "N_EPOCHS": 200,
-    "TEST_SPLIT_RATIO": 0.2,
-    "DROP_PROP": 0.1,
+    "TEST_SPLIT_RATIO": 0.3,
+    "DROP_PROP": 0.5,
     "BATCH_SIZE": 64,
     "LOSS": root_mean_squared_error,
-    "OPTIMIZER": "rmsprop",
+    "OPTIMIZER": "adam",
     "INPUT_TYPE": "NONE",
     "INPUT_INDEX": "04",
     "OUTPUT_INDEX": "05",
@@ -278,6 +270,7 @@ features = SETTINGS["FEATURES"]
 dependents = SETTINGS["DEPENDENTS"]
 rnn_types = SETTINGS["RNN_TYPES"]
 optimizer = SETTINGS["OPTIMIZER"]
+drop_prop = SETTINGS["DROP_PROP"]
 lookback_range = SETTINGS["LOOKBACK"]
 n_stacks_range = SETTINGS["N_STACKS"]
 n_units_range = SETTINGS["N_UNITS"]
@@ -292,7 +285,7 @@ for vehicle in vehicles:
                         model = define_model(
                             rnn_type, lookback, n_stacks, n_units, SETTINGS
                         )
-                        r_squared, rmse = train_rnn(
+                        r_squared, rmse, start_datetime, end_datetime, elapsed_time = train_rnn(
                             vehicle, dependent, optimizer, lookback, model, SETTINGS
                         )
                         row = (
@@ -300,13 +293,17 @@ for vehicle in vehicles:
                             dependent,
                             rnn_type,
                             optimizer,
+                            drop_prop,
                             lookback,
                             n_stacks,
                             n_units,
-                            r_squared["train"],
-                            r_squared["test"],
-                            rmse["train"],
-                            rmse["test"],
+                            round(r_squared["train"], 2),
+                            round(r_squared["test"], 2),
+                            round(rmse["train"], 3),
+                            round(rmse["test"], 3),
+                            start_datetime,
+                            end_datetime,
+                            elapsed_time
                         )
                         log_model_score(row)
 # %%
