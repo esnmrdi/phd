@@ -215,7 +215,6 @@ EXPERIMENTS = (
     "019 Hyundai Elantra GT 2019 (2.0L Auto)",
     "025 Chevrolet Captiva 2010 (2.4L Auto)",
     "027 Chevrolet Cruze 2011 (1.8L Manual)",
-    "035 Kia Rio 2013 (1.6L Auto)",
 )
 
 # %%
@@ -243,9 +242,9 @@ for vehicle in EXPERIMENTS:
     variables = load_from_Excel(vehicle, "03", "Sheet1", SETTINGS).iloc[0].to_dict()
     df = calculate_resistance_force(df, specs)
     df = calculate_power(df, specs)
-    # variables = calculate_variables(df, specs)
+    variables = calculate_variables(df, specs)
     df = calculate_fuel_consumption_rate(df, variables, specs)
-    # save_to_excel(variables, vehicle, "01", SETTINGS)
+    save_to_excel(variables, vehicle, "01", SETTINGS)
     save_to_excel(df, vehicle, "02", SETTINGS)
 
 
