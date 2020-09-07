@@ -5,11 +5,12 @@
 # %%
 # Import required libraries
 # Define a class for tracking the progress of model training
+import tensorflow
 import keras
 from keras import backend
 from keras.layers import Dense, SimpleRNN, GRU, LSTM
 from keras import Sequential, utils
-from keras.callbacks import EarlyStopping  
+from tensorflow.keras.callbacks import EarlyStopping  
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 import pandas as pd
@@ -19,6 +20,13 @@ from sklearn.metrics import r2_score, mean_squared_error
 import csv
 from datetime import datetime
 import time
+import resource
+
+# %%
+# Callback to track the memory usage after training each model
+class MemoryCallback(tensorflow.keras.callbacks.Callback):
+    def on_train_end(self, log={}):
+        print(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
 
 
 # %%
@@ -46,7 +54,6 @@ def log_model_score(row):
     with open(output_path, "a") as f:
         writer = csv.writer(f)
         writer.writerow(row)
-    print(row)
     return None
 
 
@@ -147,6 +154,7 @@ def define_model(rnn_type, lookback, n_stacks, n_units, settings):
 # %%
 # Train the RNN model by testing alternative architectures (different lookback orders, hidden units, and stacks)
 def train_rnn(vehicle, dependent, optimizer, lookback, model, settings):
+    backend.clear_session()
     start_timestamp = time.time()
     start_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     features = settings["FEATURES"]
@@ -160,7 +168,7 @@ def train_rnn(vehicle, dependent, optimizer, lookback, model, settings):
     X, y = generate_input(df, features, dependent, lookback)
     train_X, train_y, test_X, test_y = split(X, y, test_split_ratio, batch_size)
     model.compile(loss=loss, optimizer=optimizer)
-    history = model.fit(
+    model.fit(
         train_X,
         train_y,
         batch_size=batch_size,
@@ -168,31 +176,40 @@ def train_rnn(vehicle, dependent, optimizer, lookback, model, settings):
         validation_data=(test_X, test_y),
         verbose=0,
         callbacks=[
+            MemoryCallback(),
             EarlyStopping(
                 monitor="val_loss", min_delta=0, patience=10, verbose=0, mode="min"
             ),
         ],
     )
-    train_y_predict = model.predict(train_X, batch_size=batch_size)
-    test_y_predict = model.predict(test_X, batch_size=batch_size)
-    train_y, train_y_predict = (
-        scaler_y.inverse_transform(train_y),
-        scaler_y.inverse_transform(train_y_predict),
-    )
-    test_y, test_y_predict = (
-        scaler_y.inverse_transform(test_y),
-        scaler_y.inverse_transform(test_y_predict),
-    )
-    train_r_squared = r2_score(train_y, train_y_predict)
-    test_r_squared = r2_score(test_y, test_y_predict)
-    r_squared = {"train": train_r_squared, "test": test_r_squared}
+#     train_y_predict = model.predict(train_X, batch_size=batch_size)
+#     test_y_predict = model.predict(test_X, batch_size=batch_size)
+    train_score = model.evaluate(train_X, train_y, batch_size=batch_size)
+    test_score = model.evaluate(test_X, test_y, batch_size=batch_size)
+    del model
+    backend.clear_session()
+#     train_y, train_y_predict = (
+#         scaler_y.inverse_transform(train_y),
+#         scaler_y.inverse_transform(train_y_predict),
+#     )
+#     test_y, test_y_predict = (
+#         scaler_y.inverse_transform(test_y),
+#         scaler_y.inverse_transform(test_y_predict),
+#     )
+#     train_r_squared = r2_score(train_y, train_y_predict)
+#     test_r_squared = r2_score(test_y, test_y_predict)
+#     r_squared = {"train": train_r_squared, "test": test_r_squared}
+#     rmse = {
+#         "train": history.history["loss"][-1],
+#         "test": history.history["val_loss"][-1],
+#     }
     rmse = {
-        "train": history.history["loss"][-1],
-        "test": history.history["val_loss"][-1],
+        "train": train_score,
+        "test": test_score,
     }
     end_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     elapsed_time = round(time.time() - start_timestamp, 1)
-    return r_squared, rmse, start_datetime, end_datetime, elapsed_time
+    return rmse, start_datetime, end_datetime, elapsed_time
 
 
 # %%
@@ -235,21 +252,16 @@ EXPERIMENTS = (
     ("042 Nissan Rouge 2020 (2.5L Auto)", False),
     ("043 Mazda CX-3 2019 (2.0L Auto)", False),
 )
-EXPERIMENTS = (
-    ("015 VW Jetta 2016 (1.4L TC Auto)", False),
-)
 
 # %%
 # Model execution and input/output settings
 pd.options.mode.chained_assignment = None
 plt.style.use("bmh")
 SETTINGS = {
-    "FEATURES": ["SPD_KH", "ACC_MS2", "ALT_M", "RPM"],
-    # "DEPENDENTS": ["FCR_LH", "CO2_KGS", "NO_KGS", "NO2_KGS", "PM_KGS"],
-    "DEPENDENTS": ["FCR_LH", "CO2_KGS", "NO2_KGS", "PM_KGS"],
-    # "RNN_TYPES": ["SimpleRNN", "GRU", "LSTM"],
-    "RNN_TYPES": ["LSTM"],
-    "LOOKBACK": range(1, 7),
+    "FEATURES": ["SPD_KH", "ACC_MS2", "ALT_M"],
+    "DEPENDENTS": ["FCR_LH"],
+    "RNN_TYPES": ["GRU", "LSTM"],
+    "LOOKBACK": range(1, 11),
     "N_UNITS": [100],
     "N_STACKS": range(1, 4),
     "N_EPOCHS": 200,
@@ -265,7 +277,7 @@ SETTINGS = {
 
 # %%
 # Batch execution on trips of all included vehicles
-# loop through PEMS-included experiments only
+# loop through PEMS-included experiments only or obd-only data (depending on desired output)
 features = SETTINGS["FEATURES"]
 dependents = SETTINGS["DEPENDENTS"]
 rnn_types = SETTINGS["RNN_TYPES"]
@@ -274,7 +286,7 @@ drop_prop = SETTINGS["DROP_PROP"]
 lookback_range = SETTINGS["LOOKBACK"]
 n_stacks_range = SETTINGS["N_STACKS"]
 n_units_range = SETTINGS["N_UNITS"]
-vehicles = (item[0] for item in EXPERIMENTS if item[1] == False)
+vehicles = (item[0] for item in EXPERIMENTS)
 for vehicle in vehicles:
     for dependent in dependents:
         for rnn_type in rnn_types:
@@ -285,9 +297,10 @@ for vehicle in vehicles:
                         model = define_model(
                             rnn_type, lookback, n_stacks, n_units, SETTINGS
                         )
-                        r_squared, rmse, start_datetime, end_datetime, elapsed_time = train_rnn(
+                        rmse, start_datetime, end_datetime, elapsed_time = train_rnn(
                             vehicle, dependent, optimizer, lookback, model, SETTINGS
                         )
+                        del model
                         row = (
                             vehicle,
                             dependent,
@@ -297,8 +310,8 @@ for vehicle in vehicles:
                             lookback,
                             n_stacks,
                             n_units,
-                            round(r_squared["train"], 2),
-                            round(r_squared["test"], 2),
+#                             round(r_squared["train"], 2),
+#                             round(r_squared["test"], 2),
                             round(rmse["train"], 3),
                             round(rmse["test"], 3),
                             start_datetime,
