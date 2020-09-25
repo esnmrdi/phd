@@ -16,7 +16,7 @@ import seaborn as sns
 # Load sample data from Excel to a pandas dataframe
 def load_from_Excel(vehicle, order, sheet, settings):
     directory = (
-        "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
+        "../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
         + vehicle
         + "/Processed/"
         + settings["INPUT_" + order + "_TYPE"]
@@ -34,7 +34,7 @@ def load_from_Excel(vehicle, order, sheet, settings):
 # Save the predicted field back to Excel file
 def save_to_excel(df, vehicle, order, settings):
     directory = (
-        "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
+        "../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
         + vehicle
         + "/Processed/"
         + settings["OUTPUT_" + order + "_TYPE"]
@@ -58,12 +58,12 @@ def calculate_resistance_force(df, specs):
         * specs["C_D"]
         * (1 - 0.085 * df["ALT_M"] / 1000)
         * specs["A_F"]
-        * (df["SPD_KH_ORIG"] ** 2)
+        * (df["SPD_KH"] ** 2)
         + 9.8066
         * specs["WEIGHT"]
         * (specs["C_R"] / 1000)
-        * (specs["C_1"] * df["SPD_KH_ORIG"] + specs["C_2"])
-        + 9.8066 * specs["WEIGHT"] * np.sin(np.radians(df["GRADE_DEG_ORIG"]))
+        * (specs["C_1"] * df["SPD_KH"] + specs["C_2"])
+        + 9.8066 * specs["WEIGHT"] * np.sin(np.radians(df["NO_OUTLIER_GRADE_DEG"]))
     )
     return df
 
@@ -72,9 +72,9 @@ def calculate_resistance_force(df, specs):
 # Calculate power
 def calculate_power(df, specs):
     df["POWER"] = (
-        (df["RESISTANCE_FORCE"] + 1.04 * specs["WEIGHT"] * df["ACC_MS2_ORIG"])
+        (df["RESISTANCE_FORCE"] + 1.04 * specs["WEIGHT"] * df["ACC_MS2"])
         / (3600 * 0.9)
-    ) * df["SPD_KH_ORIG"]
+    ) * df["SPD_KH"]
     df["POWER2"] = df["POWER"] ** 2
     return df
 
@@ -86,7 +86,7 @@ def calculate_variables(df, specs):
     T = df["ROAD_TYPE"].groupby(df["ROAD_TYPE"]).agg(["count"]).reset_index()
     P = df["POWER"].groupby(df["ROAD_TYPE"]).agg(["sum"]).reset_index()
     P2 = df["POWER2"].groupby(df["ROAD_TYPE"]).agg(["sum"]).reset_index()
-    df["FCR_LS"] = df["True FCR (L/H)"] / 3600
+    df["FCR_LS"] = df["FCR_LH"] / 3600
     F = df["FCR_LS"].groupby(df["ROAD_TYPE"]).agg(["sum"]).reset_index()
     W = df["RPM"].groupby(df["ROAD_TYPE"]).agg(["sum"]).reset_index()
     T_CITY = T.loc[T["ROAD_TYPE"] == "City", "count"].iloc[0]
@@ -195,12 +195,12 @@ def power_condition_2(row, beta0, beta1, beta2, specs):
 # %%
 # Cacluate fuel consumption rate
 def calculate_fuel_consumption_rate(df, variables, specs):
-    df["VTCPFM-I FCR (L/H)"] = df.apply(
+    df["VTCPFM_I_FCR_LH"] = df.apply(
         power_condition_1,
         args=(variables["ALPHA0"], variables["ALPHA1"], variables["ALPHA2"]),
         axis=1,
     )
-    df["VTCPFM-II FCR (L/H)"] = df.apply(
+    df["VTCPFM_II_FCR_LH"] = df.apply(
         power_condition_2,
         args=(variables["BETA0"], variables["BETA1"], variables["BETA2"], specs),
         axis=1,
@@ -220,14 +220,14 @@ EXPERIMENTS = (
 # %%
 # Model execution settings
 SETTINGS = {
-    "INPUT_01_TYPE": "ANN",
-    "INPUT_01_INDEX": "20",
+    "INPUT_01_TYPE": "NONE",
+    "INPUT_01_INDEX": "10",
     "INPUT_02_TYPE": "VTCPFM",
     "INPUT_02_INDEX": "SPECS",
     "INPUT_03_TYPE": "VTCPFM",
     "INPUT_03_INDEX": "VARIABLES",
-    "OUTPUT_01_TYPE": "VTCPFM",
-    "OUTPUT_01_INDEX": "VARIABLES",
+    # "OUTPUT_01_TYPE": "VTCPFM",
+    # "OUTPUT_01_INDEX": "VARIABLES",
     "OUTPUT_02_TYPE": "VTCPFM",
     "OUTPUT_02_INDEX": "COMPARE",
 }
@@ -242,10 +242,12 @@ for vehicle in EXPERIMENTS:
     variables = load_from_Excel(vehicle, "03", "Sheet1", SETTINGS).iloc[0].to_dict()
     df = calculate_resistance_force(df, specs)
     df = calculate_power(df, specs)
-    variables = calculate_variables(df, specs)
+    # variables = calculate_variables(df, specs)
     df = calculate_fuel_consumption_rate(df, variables, specs)
-    save_to_excel(variables, vehicle, "01", SETTINGS)
+    # save_to_excel(variables, vehicle, "01", SETTINGS)
     save_to_excel(df, vehicle, "02", SETTINGS)
 
+
+# %%
 
 # %%
