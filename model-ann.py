@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import tensorflow as tf
+import keras
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
@@ -17,14 +17,14 @@ from sklearn.metrics import r2_score
 
 # %%
 # Display training progress
-class ReportProgress(tf.keras.callbacks.Callback):
-    def __init__(self, df, test_split_ratio, n_epochs):
-        self.df = df
+class ReportProgress(keras.callbacks.Callback):
+    def __init__(self, sample, test_split_ratio, n_epochs):
+        self.sample = sample
         self.test_split_ratio = test_split_ratio
         self.n_epochs = n_epochs
 
     def on_train_begin(self, logs):
-        n_examples = len(self.df)
+        n_examples = len(self.sample)
         n_train = int((1 - self.test_split_ratio) * n_examples)
         print(
             "Training started on {0} out of {1} available examples.".format(
@@ -41,10 +41,30 @@ class ReportProgress(tf.keras.callbacks.Callback):
 
 
 # %%
+# Load data from Excel to a pandas dataframe
+def load_from_Excel(vehicle, settings):
+    directory = (
+        "../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
+        + vehicle
+        + "/Processed/"
+    )
+    input_file = vehicle + " - {0} - {1}.xlsx".format(
+        settings["INPUT_TYPE"], settings["INPUT_INDEX"]
+    )
+    input_path = directory + input_file
+    sheets_dict = pd.read_excel(input_path, sheet_name=None, header=0)
+    df = pd.DataFrame()
+    for _, sheet in sheets_dict.items():
+        df = df.append(sheet)
+    df.reset_index(inplace=True, drop=True)
+    return df
+
+
+# %%
 # Load sample data from Excel to a pandas dataframe
 def load_sample_from_Excel(vehicle, settings):
     directory = (
-        "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
+        "../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
         + vehicle
         + "/Processed/"
     )
@@ -89,18 +109,11 @@ def add_lagged_features(df, settings, index):
 # Scale the features
 def scale(df, total_features, settings):
     df_temp = df.copy()
-    feature_names = total_features + [settings["DEPENDENT"]]
-    scaler = preprocessing.StandardScaler().fit(df_temp[feature_names])
-    df_temp[feature_names] = scaler.transform(df_temp[feature_names])
-    return df_temp, scaler
-
-
-# %%
-# Reverse-scale the features
-def reverse_scale(df, scaler):
-    df_temp = df.copy()
-    df_temp = np.sqrt(scaler.var_[-1]) * df_temp + scaler.mean_[-1]
-    return df_temp
+    scaler_features = preprocessing.StandardScaler().fit(df_temp[total_features])
+    scaler_dependent = preprocessing.StandardScaler().fit(df_temp[[settings["DEPENDENT"]]])
+    df_temp[total_features] = scaler_features.transform(df_temp[total_features])
+    df_temp[[settings["DEPENDENT"]]] = scaler_dependent.transform(df_temp[[settings["DEPENDENT"]]])
+    return df_temp, scaler_features, scaler_dependent
 
 
 # %%
@@ -109,17 +122,15 @@ def define_models(total_features, settings):
     n_features = len(total_features)
     models = []
     for n_layers, n_neurons in settings["MODEL_ARCHITECTURES"]:
-        model = tf.keras.models.Sequential()
+        model = keras.models.Sequential()
         model.add(
-            tf.keras.layers.Dense(
-                n_neurons, input_shape=[n_features], activation="relu"
-            )
+            keras.layers.Dense(n_neurons, input_shape=[n_features], activation="relu")
         )
-        model.add(tf.keras.layers.Dropout(settings["DROP_PROP"]))
+        model.add(keras.layers.Dropout(settings["DROP_PROP"]))
         for _ in range(n_layers - 1):
-            model.add(tf.keras.layers.Dense(n_neurons, activation="relu"))
-            model.add(tf.keras.layers.Dropout(settings["DROP_PROP"]))
-        model.add(tf.keras.layers.Dense(1, activation="linear"))
+            model.add(keras.layers.Dense(n_neurons, activation="relu"))
+            model.add(keras.layers.Dropout(settings["DROP_PROP"]))
+        model.add(keras.layers.Dense(1, activation="linear"))
         models.append(model)
     return models
 
@@ -140,11 +151,17 @@ def calculate_score(model, train_set, test_set, total_features, settings):
 
 # %%
 # Tune the ANN model by testing alternative architectures (from shallow and wide to deep and narrow)
-def tune_ann(df, total_features, scaler, settings):
+def tune_ann(df, total_features, scaler_features, scaler_dependent, settings):
     df_temp = df.copy()
+    if df_temp.shape[0] > settings["MAX_SAMPLE_SIZE"]:
+        sample_size = settings["MAX_SAMPLE_SIZE"]
+        sample = df.sample(sample_size)
+    else:
+        sample_size = df.shape[0]
+        sample = df
     models = define_models(total_features, settings)
     train_set, test_set = train_test_split(
-        df_temp, test_size=settings["TEST_SPLIT_RATIO"], shuffle=True
+        sample, test_size=settings["TEST_SPLIT_RATIO"], shuffle=True
     )
     x_train, y_train = train_set[total_features], train_set[settings["DEPENDENT"]]
     x_test, y_test = test_set[total_features], test_set[settings["DEPENDENT"]]
@@ -153,7 +170,7 @@ def tune_ann(df, total_features, scaler, settings):
     for index, model in enumerate(models):
         model.compile(
             loss=settings["METRICS"][0],
-            optimizer=tf.keras.optimizers.RMSprop(lr=settings["LEARNING_RATE"]),
+            optimizer=keras.optimizers.RMSprop(lr=settings["LEARNING_RATE"]),
             metrics=settings["METRICS"],
         )
         history = model.fit(
@@ -166,23 +183,22 @@ def tune_ann(df, total_features, scaler, settings):
             verbose=0,
             callbacks=[
                 ReportProgress(
-                    df_temp, settings["TEST_SPLIT_RATIO"], settings["N_EPOCHS"]
+                    sample, settings["TEST_SPLIT_RATIO"], settings["N_EPOCHS"]
                 )
             ],
         )
-        predicted_temp = "{0}_({1},{2})".format(
-            settings["PREDICTED"],
-            settings["MODEL_ARCHITECTURES"][index][0],
-            settings["MODEL_ARCHITECTURES"][index][1],
-        )
-        df_temp[predicted_temp] = model.predict(df_temp[total_features])
-        df_temp[predicted_temp] = reverse_scale(df_temp[predicted_temp], scaler)
+        # predicted_temp = "{0}_({1},{2})".format(
+        #     settings["PREDICTED"],
+        #     settings["MODEL_ARCHITECTURES"][index][0],
+        #     settings["MODEL_ARCHITECTURES"][index][1],
+        # )
+        df_temp[settings["PREDICTED"]] = model.predict(df_temp[total_features])
+        df_temp[settings["PREDICTED"]] = scaler_dependent.inverse_transform(df_temp[settings["PREDICTED"]])
         histories.append(history)
         score = calculate_score(model, train_set, test_set, total_features, settings)
         scores.append(score)
-    df_temp[settings["DEPENDENT"]] = reverse_scale(
-        df_temp[settings["DEPENDENT"]], scaler
-    )
+    df_temp[total_features] = scaler_features.inverse_transform(df_temp[total_features])
+    df_temp[[settings["DEPENDENT"]]] = scaler_dependent.inverse_transform(df_temp[[settings["DEPENDENT"]]])
     return df_temp, scores, histories
 
 
@@ -236,7 +252,7 @@ def plot_training_results(vehicle, sample_size, scores, histories, settings):
         ax.legend(loc="best")
     plt.show()
     fig.savefig(
-        "../../../Google Drive/Academia/PhD Thesis/Modeling Outputs/{0}/{1} - {2}/{3} - Training Result.jpg".format(
+        "../../Google Drive/Academia/PhD Thesis/Modeling Outputs/{0}/{1} - {2}/{3} - Training Result.jpg".format(
             settings["OUTPUT_TYPE"],
             settings["OUTPUT_INDEX"],
             settings["MODEL_STRUCTURE"],
@@ -294,7 +310,7 @@ def plot_accuracy(df, vehicle, sample_size, scores, settings):
         )
     plt.show()
     fig.savefig(
-        "../../../Google Drive/Academia/PhD Thesis/Modeling Outputs/{0}/{1} - {2}/{3} - Observed vs. Predicted.jpg".format(
+        "../../Google Drive/Academia/PhD Thesis/Modeling Outputs/{0}/{1} - {2}/{3} - Observed vs. Predicted.jpg".format(
             settings["OUTPUT_TYPE"],
             settings["OUTPUT_INDEX"],
             settings["MODEL_STRUCTURE"],
@@ -310,7 +326,7 @@ def plot_accuracy(df, vehicle, sample_size, scores, settings):
 # Save the predicted field back to Excel file
 def save_to_excel(df, vehicle, settings):
     directory = (
-        "../../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
+        "../../Google Drive/Academia/PhD Thesis/Field Experiments/Veepeak/"
         + vehicle
         + "/Processed/"
     )
@@ -365,15 +381,18 @@ EXPERIMENTS = (
     "042 Nissan Rouge 2020 (2.5L Auto)",
     "043 Mazda CX-3 2019 (2.0L Auto)",
 )
+EXPERIMENTS = ("027 Chevrolet Cruze 2011 (1.8L Manual)",)
 
 # %%
 # ANN settings
 SETTINGS = {
     "DEPENDENT": "FCR_LH",
-    "PREDICTED": "FCR_LH_PRED",
+    "PREDICTED": "CASCADED_FCR_LH",
     "FEATURES": ["SPD_KH", "ACC_MS2", "NO_OUTLIER_GRADE_DEG", "RPM_PRED"],
-    "LAGGED_FEATURES": ["SPD_KH", "NO_OUTLIER_GRADE_DEG"],
-    "LAG_ORDER": 1,
+    # "LAGGED_FEATURES": ["SPD_KH", "NO_OUTLIER_GRADE_DEG"],
+    "LAGGED_FEATURES": [],
+    # "LAG_ORDER": 1,
+    "LAG_ORDER": 0,
     "MAX_SAMPLE_SIZE": 5400,
     "TEST_SPLIT_RATIO": 0.20,
     "N_EPOCHS": 200,
@@ -387,8 +406,10 @@ SETTINGS = {
         "ACC_MS2": "Acceleration (m/s2)",
         "NO_OUTLIER_GRADE_DEG": "Road Grade (Deg)",
     },
-    "MODEL_STRUCTURE": "FCR ~ SPD + SPD_L1 + ACC + GRADE + GRADE_L1 + RPM_PRED",
-    "MODEL_ARCHITECTURES": [(1, 128), (2, 64), (4, 32), (8, 16)],
+    # "MODEL_STRUCTURE": "FCR ~ SPD + SPD_L1 + ACC + GRADE + GRADE_L1 + RPM_PRED",
+    "MODEL_STRUCTURE": "CASCADED_FCR_LH ~ SPD + ACC + GRADE + RPM_PRED",
+    # "MODEL_ARCHITECTURES": [(1, 128), (2, 64), (4, 32), (8, 16)],
+    "MODEL_ARCHITECTURES": [(4, 32)],
     "LEARNING_RATE": 0.001,
     "METRICS": [
         "mean_squared_error",
@@ -396,55 +417,61 @@ SETTINGS = {
         "mean_absolute_percentage_error",
         "cosine_proximity",
     ],
-    "INPUT_TYPE": "ANN",
-    "OUTPUT_TYPE": "ANN",
-    "INPUT_INDEX": "17",
-    "OUTPUT_INDEX": "19",
-    "RPM_BEST_ARCHS": [
-        "(1,128)",
-        "(2,64)",
-        "(2,64)",
-        "(2,64)",
-        "(1,128)",
-        "(2,64)",
-        "(2,64)",
-        "(1,128)",
-        "(2,64)",
-        "(4,32)",
-        "(2,64)",
-        "(2,64)",
-        "(1,128)",
-        "(1,128)",
-        "(1,128)",
-        "(4,32)",
-        "(2,64)",
-        "(1,128)",
-        "(2,64)",
-        "(1,128)",
-        "(1,128)",
-        "(2,64)",
-        "(2,64)",
-        "(2,64)",
-        "(1,128)",
-        "(1,128)",
-        "(1,128)",
-    ],
+    "INPUT_TYPE": "NONE",
+    "OUTPUT_TYPE": "NONE",
+    "INPUT_INDEX": "09",
+    "OUTPUT_INDEX": "10",
+    # "RPM_BEST_ARCHS": [
+    #     "(1,128)",
+    #     "(2,64)",
+    #     "(2,64)",
+    #     "(2,64)",
+    #     "(1,128)",
+    #     "(2,64)",
+    #     "(2,64)",
+    #     "(1,128)",
+    #     "(2,64)",
+    #     "(4,32)",
+    #     "(2,64)",
+    #     "(2,64)",
+    #     "(1,128)",
+    #     "(1,128)",
+    #     "(1,128)",
+    #     "(4,32)",
+    #     "(2,64)",
+    #     "(1,128)",
+    #     "(2,64)",
+    #     "(1,128)",
+    #     "(1,128)",
+    #     "(2,64)",
+    #     "(2,64)",
+    #     "(2,64)",
+    #     "(1,128)",
+    #     "(1,128)",
+    #     "(1,128)",
+    # ],
 }
 
 # %%
 # Batch execution on all vehicles and their trips
 for index, vehicle in enumerate(EXPERIMENTS):
     # Add lagged features to the dataframe and sampling
-    df, sample_size = load_sample_from_Excel(vehicle, SETTINGS)
+    df = load_from_Excel(vehicle, SETTINGS)
+    # df, sample_size = load_sample_from_Excel(vehicle, SETTINGS)
     # Add lagged features to the dataframe
-    df, total_features = add_lagged_features(df, SETTINGS, index)
+    # df, total_features = add_lagged_features(df, SETTINGS, index)
+    total_features = SETTINGS["FEATURES"]
     # Scale the features
-    df, scaler = scale(df, total_features, SETTINGS)
+    df, scaler_features, scaler_dependent = scale(df, total_features, SETTINGS)
     # Tune the ANN model by testing alternative architectures (from shallow and wide to deep and narrow)
-    df, scores, histories = tune_ann(df, total_features, scaler, SETTINGS)
+    df, scores, histories = tune_ann(df, total_features, scaler_features, scaler_dependent, SETTINGS)
     # Plot training histories for all model architectures and save plots to file
-    plot_training_results(vehicle, sample_size, scores, histories, SETTINGS)
+    # plot_training_results(vehicle, sample_size, scores, histories, SETTINGS)
     # Plot predictions vs. ground-truth and save plot to file
-    plot_accuracy(df, vehicle, sample_size, scores, SETTINGS)
+    # plot_accuracy(df, vehicle, sample_size, scores, SETTINGS)
     # Save the predicted field back to Excel file
     save_to_excel(df, vehicle, SETTINGS)
+
+# %%
+
+# %%
