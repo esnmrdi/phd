@@ -26,7 +26,7 @@ class MemoryCallback(keras.callbacks.Callback):
 
 # %%
 # Load settings of best models
-def load_best_models_settings(sheet):
+def load_best_model_settings(sheet):
     directory = "../../Google Drive/Academia/PhD Thesis/Charts, Tables, Forms, Flowcharts, Spreadsheets, Figures/"
     input_file = "Paper III - RNN Ranking.xlsx"
     input_path = directory + input_file
@@ -36,12 +36,12 @@ def load_best_models_settings(sheet):
 
 # %%
 # Load sample data from Excel to a pandas dataframe
-def load_from_Excel(sensor_type, vehicle, sheet, settings):
+def load_from_Excel(sensor, vehicle, settings):
     input_type = settings["INPUT_TYPE"]
     input_index = settings["INPUT_INDEX"]
     directory = (
         "../../Google Drive/Academia/PhD Thesis/Field Experiments/"
-        + sensor_type
+        + sensor
         + "/"
         + vehicle
         + "/Processed/"
@@ -50,18 +50,18 @@ def load_from_Excel(sensor_type, vehicle, sheet, settings):
     )
     input_file = "{0} - {1} - {2}.xlsx".format(vehicle, input_type, input_index)
     input_path = directory + input_file
-    df = pd.read_excel(input_path, sheet_name=sheet, header=0)
+    df = pd.read_excel(input_path, sheet_name="Sheet1", header=0)
     return df
 
 
 # %%
 # Save the predicted field back to Excel file
-def save_to_excel(df, sensor_type, vehicle, settings):
+def save_to_excel(df, sensor, vehicle, settings):
     output_type = settings["OUTPUT_TYPE"]
     output_index = settings["OUTPUT_INDEX"]
     directory = (
         "../../Google Drive/Academia/PhD Thesis/Field Experiments/"
-        + sensor_type
+        + sensor
         + "/"
         + vehicle
         + "/Processed/"
@@ -75,18 +75,20 @@ def save_to_excel(df, sensor_type, vehicle, settings):
     print("{0} -> Data is saved to Excel successfully!".format(vehicle))
     return None
 
+
 # %%
-# Save fitted model to h5 file
+# Save fitted model to .h5 file
 def save_to_h5(model, vehicle, dependent, lookback, settings):
     output_type = settings["OUTPUT_TYPE"]
     directory = (
-        "../../Google Drive/Academia/PhD Thesis/Modeling Outputs/"
-        + output_type
-        + "/"
+        "../../Google Drive/Academia/PhD Thesis/Modeling Outputs/" + output_type + "/"
     )
-    output_file = "{0} - {1} - {2} - L{3}.h5".format(vehicle, output_type, dependent, lookback)
+    output_file = "{0} - {1} - {2} - L{3}.h5".format(
+        vehicle, output_type, dependent, lookback
+    )
     output_path = directory + output_file
     model.save(output_path)
+
 
 # %%
 # Scale the input data
@@ -101,7 +103,7 @@ def scale(df, features, dependent):
 
 # %%
 # Generate time-series input for the desired lookback order
-def generate_input(df, features, dependent, lookback):
+def generate_rnn_input(df, features, dependent, lookback):
     dataset = df[features + [dependent]].to_numpy()
     dim = len(features)
     X, y = [], []
@@ -129,7 +131,7 @@ def split(X, y, test_split_ratio, batch_size):
 # %%
 # Definition of the custom loss function
 def rmse(y_true, y_pred):
-    return np.sqrt(np.mean(np.square(np.array(y_pred) - np.array(y_true))))
+    return backend.sqrt(backend.mean(backend.square(y_pred - y_true)))
 
 
 # %%
@@ -195,7 +197,7 @@ def train_rnn(df, model, vehicle, dependent, lookback, settings):
     loss = settings["LOSS"]
     predicted = dependent + "_PRED_L{0}".format(lookback)
     df_temp, scaler_X, scaler_y = scale(df, features, dependent)
-    X, y = generate_input(df_temp, features, dependent, lookback)
+    X, y = generate_rnn_input(df_temp, features, dependent, lookback)
     train_X, train_y, test_X, test_y = split(X, y, test_split_ratio, batch_size)
     model.compile(loss=loss, optimizer=settings["OPTIMIZER"])
     model.fit(
@@ -218,7 +220,8 @@ def train_rnn(df, model, vehicle, dependent, lookback, settings):
     X = X[:trim_index]
     y_predict = model.predict(X, batch_size=batch_size)
     y_predict = scaler_y.inverse_transform(y_predict)
-    y_predict = np.append(y_predict, np.repeat(np.nan, trim_size + lookback))
+    y_predict = np.insert(y_predict, 0, np.repeat(np.nan, lookback))
+    y_predict = np.append(y_predict, np.repeat(np.nan, trim_size))
     df[predicted] = y_predict
     del model
     backend.clear_session()
@@ -248,7 +251,7 @@ SETTINGS = {
 # %%
 # Batch execution on trips of all included vehicles
 # loop through PEMS-included experiments only or obd-only data (depending on desired output)
-best_model_settings = load_best_models_settings("Best Model Settings (1-6)")
+best_model_settings = load_best_model_settings("Best Model Settings (1-6)")
 old_vehicle = ""
 for index, model_setting in best_model_settings.iterrows():
     vehicle = model_setting["VEHICLE"]
@@ -256,14 +259,14 @@ for index, model_setting in best_model_settings.iterrows():
     rnn_type = model_setting["RNN_TYPE"]
     lookback = model_setting["LOOKBACK"]
     n_stacks = model_setting["N_STACKS"]
-    sensor_type = "Veepeak" if dependent == "FCR_LH" else "3DATX parSYNC Plus"
-    if vehicle != old_vehicle: 
+    sensor = "Veepeak" if dependent == "FCR_LH" else "3DATX parSYNC Plus"
+    if vehicle != old_vehicle:
         if old_vehicle != "":
-            save_to_excel(df, old_sensor_type, old_vehicle, SETTINGS)
-        df = load_from_Excel(sensor_type, vehicle, "Sheet1", SETTINGS)
+            save_to_excel(df, old_sensor, old_vehicle, SETTINGS)
+        df = load_from_Excel(sensor, vehicle, SETTINGS)
     print(vehicle, dependent, lookback)
     model = define_model(rnn_type, lookback, n_stacks, SETTINGS)
     df = train_rnn(df, model, vehicle, dependent, lookback, SETTINGS)
-    old_vehicle, old_sensor_type = vehicle, sensor_type
+    old_vehicle, old_sensor = vehicle, sensor
     del model
 # %%
