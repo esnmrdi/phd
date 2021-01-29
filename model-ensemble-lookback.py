@@ -121,12 +121,7 @@ SETTINGS = {
         RandomForestRegressor(n_estimators=10),
         RandomForestRegressor(n_estimators=100),
         MLPRegressor(hidden_layer_sizes=(100,)),
-        MLPRegressor(
-            hidden_layer_sizes=(
-                100,
-                100,
-            )
-        ),
+        MLPRegressor(hidden_layer_sizes=(100, 100,)),
     ),
 }
 
