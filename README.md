@@ -1,2 +1,2 @@
-# phd-thesis
-My PhD research on development of instantaneous vehicular fuel and emission estimation models
+# phd
+My PhD research codes on leveraging ML for vehicular energy and emission models (SVR, DNN, RNN, and Ensemble)
